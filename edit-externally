@@ -71,8 +71,8 @@ function copy-from-temp-file {
 }
 
 TMP_DIR=`tmp-dir`
-TMP_NAME="${TMP_DIR}/${APP}.md"
 APP=`get-current-app`
+TMP_NAME="${TMP_DIR}/${APP}.md"
 
 copy-to-temp-file $TMP_NAME $APP
 # exit 0
