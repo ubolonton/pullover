@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+# TODO: Fail early, but clean up temp files upon failure.
+
+# TODO: Clean up clipboard after we are done.
+
+export EDITOR=${EDITOR:-"/opt/local/bin/emacsclient -a '' -c --display=ns"}
+
+# Otherwise pbcopy/pbpaste use C coding.
+export LANG=en_US.UTF-8
+
+# TODO: Find a better way to get process/app.
+function get-current-app {
+    osascript - <<EOF
+tell application "System Events"
+     name of first application process whose frontmost is true
+end tell
+EOF
+}
+
+# TODO: Find a better way to wait for completion, instead of a fixed delay.
+function copy-text {
+    local APP=$1
+    osascript - <<EOF
+tell application "System Events" to tell process "$APP"
+     tell menu 1 of menu bar item "Edit" of menu bar 1
+          click menu item "Select All"
+          click menu item "Copy"
+     end tell
+end tell
+delay 0.8
+EOF
+}
+
+# FIX: This doesn't work with Reddit, among other things, where the editor loses focus on app
+# switching.
+# TODO: App name and process name can be different, right?
+function paste-text {
+    local APP=$1
+    osascript - <<EOF
+activate application "$APP"
+tell application "System Events" to tell process "$APP"
+     tell menu 1 of menu bar item "Edit" of menu bar 1
+          click menu item "Select All"
+          click menu item "Paste"
+     end tell
+end tell
+delay 1.0
+EOF
+}
+
+# TODO: Use a better name for the temp file.
+
+# TODO
+function tmp-dir {
+    mktemp -d /tmp/edit-externally.XXXXXX
+}
+
+function copy-to-temp-file {
+    local TMP_NAME=$1
+    local APP=$2
+    copy-text $APP
+    pbpaste > $TMP_NAME
+}
+
+function copy-from-temp-file {
+    local TMP_NAME=$1
+    local APP=$2
+    pbcopy < $TMP_NAME
+    paste-text $APP
+}
+
+TMP_DIR=`tmp-dir`
+TMP_NAME="${TMP_DIR}/${APP}.md"
+APP=`get-current-app`
+
+copy-to-temp-file $TMP_NAME $APP
+# exit 0
+
+$EDITOR $TMP_NAME
+
+copy-from-temp-file $TMP_NAME $APP
+
+# Remove the temp file.
+rm -rf $TMP_DIR
