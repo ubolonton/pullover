@@ -1,0 +1,18 @@
+[package]
+name = "popup-edit"
+version = "0.1.0"
+authors = ["Nguyễn Tuấn Anh <ubolonton@gmail.com>"]
+edition = "2018"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies.emacs]
+version = "0.8.0"
+path = "../emacs-module-rs"
+
+[dependencies]
+objc = "0.2.6"
+cocoa = "0.18.4"
+#core-foundation = "0.6.4"
