@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 
-# TODO: Fail early, but clean up temp files upon failure.
+set -eu
+set -o pipefail
 
-# TODO: Clean up clipboard after we are done.
-
+# Use Emacs by default. TODO: Don't assume MacPorts.
 export EDITOR=${EDITOR:-"/opt/local/bin/emacsclient -a '' -c --display=ns"}
-
 # Otherwise pbcopy/pbpaste use C coding.
 export LANG=en_US.UTF-8
 
+# Fail early, but clean up upon failure.
+trap cleanup EXIT ERR INT TERM
+
+# TODO: Clean up clipboard after we are done.
+cleanup() {
+    if [ -d "$TMP_DIR" ]; then
+        rm -rf "$TMP_DIR"
+    fi
+}
+
 # TODO: Find a better way to get process/app.
-function get-current-app {
+get-current-app() {
     osascript - <<EOF
 tell application "System Events"
      name of first application process whose frontmost is true
@@ -19,7 +28,7 @@ EOF
 }
 
 # TODO: Find a better way to wait for completion, instead of a fixed delay.
-function copy-text {
+copy-text() {
     local APP=$1
     osascript - <<EOF
 tell application "System Events" to tell process "$APP"
@@ -35,7 +44,7 @@ EOF
 # FIX: This doesn't work with Reddit, among other things, where the editor loses focus on app
 # switching.
 # TODO: App name and process name can be different, right?
-function paste-text {
+paste-text() {
     local APP=$1
     osascript - <<EOF
 activate application "$APP"
@@ -45,41 +54,38 @@ tell application "System Events" to tell process "$APP"
           click menu item "Paste"
      end tell
 end tell
-delay 1.0
+delay 0.
 EOF
 }
 
-# TODO: Use a better name for the temp file.
-
 # TODO
-function tmp-dir {
+tmp-dir() {
     mktemp -d /tmp/edit-externally.XXXXXX
 }
 
-function copy-to-temp-file {
+copy-to-temp-file() {
     local TMP_NAME=$1
     local APP=$2
-    copy-text $APP
-    pbpaste > $TMP_NAME
+    copy-text "$APP"
+    pbpaste > "$TMP_NAME"
 }
 
-function copy-from-temp-file {
+copy-from-temp-file() {
     local TMP_NAME=$1
     local APP=$2
-    pbcopy < $TMP_NAME
-    paste-text $APP
+    pbcopy < "$TMP_NAME"
+    paste-text "$APP"
 }
 
-TMP_DIR=`tmp-dir`
-APP=`get-current-app`
+TMP_DIR=$(tmp-dir)
+APP=$(get-current-app)
+# TODO: Use a better name for the temp file.
 TMP_NAME="${TMP_DIR}/${APP}.md"
 
-copy-to-temp-file $TMP_NAME $APP
-# exit 0
+# TODO: Handle empty texts.
 
-$EDITOR $TMP_NAME
+copy-to-temp-file "$TMP_NAME" "$APP"
 
-copy-from-temp-file $TMP_NAME $APP
+$EDITOR "$TMP_NAME"
 
-# Remove the temp file.
-rm -rf $TMP_DIR
+copy-from-temp-file "$TMP_NAME" "$APP"
