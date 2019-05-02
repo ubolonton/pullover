@@ -37,7 +37,7 @@ tell application "System Events" to tell process "$APP"
           click menu item "Copy"
      end tell
 end tell
-delay 0.8
+delay 0.1
 EOF
 }
 
