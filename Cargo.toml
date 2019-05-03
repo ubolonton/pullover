@@ -12,7 +12,10 @@ crate-type = ["cdylib"]
 version = "0.8.0"
 path = "../emacs-module-rs"
 
+[dependencies.objc]
+version = "0.2.6"
+features = ["exception"]
+
 [dependencies]
-objc = "0.2.6"
 cocoa = "0.18.4"
 #core-foundation = "0.6.4"
