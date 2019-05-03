@@ -1,5 +1,5 @@
 [package]
-name = "popup-edit"
+name = "popup-edit-sys"
 version = "0.1.0"
 authors = ["Nguyễn Tuấn Anh <ubolonton@gmail.com>"]
 edition = "2018"

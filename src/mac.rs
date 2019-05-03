@@ -21,7 +21,7 @@ fn sleep(env: &Env, seconds: f64) -> Result<()> {
 ///
 /// This should be run in a background thread.
 #[defun]
-fn watch_clipboard(env: &Env, timeout: i64) -> Result<Option<i64>> {
+fn _watch_clipboard(env: &Env, timeout: i64) -> Result<Option<i64>> {
     let pb = unsafe { NSPasteboard::generalPasteboard(nil) };
     let count = unsafe { pb.changeCount() };
     let start = Instant::now();
