@@ -6,4 +6,4 @@
 (require 'popup-edit-sys)
 
 (ert-deftest basic ()
-  (message "%s" (popup-edit-sys--watch-clipboard 5000)))
+  (message "%s" (popup-edit-sys--wait-for-clipboard 5000 (popup-edit-sys--change-count))))

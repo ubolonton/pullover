@@ -27,10 +27,11 @@ fn _change_count() -> Result<i64> {
 ///
 /// This should be run in a background thread.
 #[defun]
-fn _watch_clipboard(env: &Env, timeout: i64) -> Result<Option<i64>> {
+fn _wait_for_clipboard(env: &Env, timeout: i64, count: Option<i64>) -> Result<Option<i64>> {
+    //    copy_text();
     let pb = unsafe { NSPasteboard::generalPasteboard(nil) };
-    let count = unsafe { pb.changeCount() };
     let start = Instant::now();
+    let count = count.unwrap_or_else(|| unsafe { pb.changeCount() });
     let timeout = Duration::from_millis(timeout as u64);
     loop {
         let new_count = unsafe { pb.changeCount() };

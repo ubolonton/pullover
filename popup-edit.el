@@ -57,7 +57,7 @@ end tell
           (popup-edit-finish))
       ;; TODO: For Emacs 25: Add a separate API to get initial change count, then poll from that,
       ;; since there's no threading support.
-      (let ((watcher (make-thread (lambda () (popup-edit-sys--watch-clipboard popup-edit-clipboard-timeout)))))
+      (let ((watcher (make-thread (lambda () (popup-edit-sys--wait-for-clipboard popup-edit-clipboard-timeout nil)))))
         (message "copy-text %s" (benchmark-run (popup-edit--copy-text app)))
         ;; TODO: Find a way not to block the main thread.
         (let* ((change-count (thread-join watcher)))
