@@ -1,8 +1,18 @@
 (require 'popup-edit-sys)
 
-(defvar popup-edit--buffer)
+;;; TODO: Consider allowing multiple popup-edit sessions at the same time.
+(defvar popup-edit--buffer nil)
 
-(defcustom popup-edit-major-mode 'gfm-mode)
+(defvar-local popup-edit--app nil)
+
+(defcustom popup-edit-clipboard-timeout 100
+  "Number of milliseconds to wait for the external app to copy
+text into the clipboard.")
+
+(defcustom popup-edit-clear-clipboard-when-done nil
+  "")
+
+;; (defcustom popup-edit-major-mode 'gfm-mode)
 
 (defun popup-edit--get-current-app ()
   (do-applescript "
@@ -12,14 +22,14 @@ end tell
 "))
 
 (defun popup-edit--copy-text (app)
-  (message "copy-text %s" (benchmark-run (do-applescript (format "
+  (do-applescript (format "
 tell application \"System Events\" to tell process %s
      tell menu 1 of menu bar item \"Edit\" of menu bar 1
           click menu item \"Select All\"
           click menu item \"Copy\"
      end tell
 end tell
-" app)))))
+" app)))
 
 (defun popup-edit--paste-text (app)
   (do-applescript (format "
@@ -32,41 +42,52 @@ tell application \"System Events\" to tell process %s
 end tell
 " app app)))
 
-(defvar popup-edit--file)
+(defun popup-edit--activate-app (app)
+  (do-applescript (format "activate application %s" app)))
 
+(defun popup-edit--activate-emacs ()
+  (popup-edit--activate-app "\"Emacs\""))
+
+;;; TODO: If there's already another on-going, ask user what to do.
 (defun popup-edit-start ()
-  (let ((app (popup-edit--get-current-app))
-        (watcher (make-thread (lambda () (popup-edit-sys--watch-clipboard 2000)))))
-    (popup-edit--copy-text app)
-    (let* ((change-count (thread-join watcher))
-           (buffer (generate-new-buffer "popup-edit.md")))
-      (do-applescript "activate application \"emacs\"")
-      (switch-to-buffer buffer)
-      (clipboard-yank))))
+  (let ((app (popup-edit--get-current-app)))
+    (if (string-match-p (regexp-quote "emacs") (downcase app))
+        (progn
+          (message "Trying to finish on-going popup-edit session")
+          (popup-edit-finish))
+      ;; TODO: For Emacs 25: Add a separate API to get initial change count, then poll from that,
+      ;; since there's no threading support.
+      (let ((watcher (make-thread (lambda () (popup-edit-sys--watch-clipboard popup-edit-clipboard-timeout)))))
+        (message "copy-text %s" (benchmark-run (popup-edit--copy-text app)))
+        ;; TODO: Find a way not to block the main thread.
+        (let* ((change-count (thread-join watcher)))
+          (setq popup-edit--buffer (generate-new-buffer "popup-edit.md"))
+          (popup-edit--activate-emacs)
+          (switch-to-buffer popup-edit--buffer)
+          (setq popup-edit--app app)
+          ;; TODO: Skip this if the external app didn't paste. Some apps don't if the input is
+          ;; empty.
+          (clipboard-yank))))))
 
-(defun popup-edit-save ())
+(defun popup-edit-finish ()
+  (interactive)
+  (unless (buffer-live-p popup-edit--buffer)
+    (error "No popup-edit session"))
+  (with-current-buffer popup-edit--buffer
+    (clipboard-kill-ring-save (point-min) (point-max))
+    (unwind-protect
+        (popup-edit--paste-text popup-edit--app)
+      (kill-buffer)
+      (setq popup-edit--buffer nil))))
 
-(defun popup-edit-cancel ())
-
-(defun popup-edit-start-1 ()
-  (let ((app (popup-edit--get-current-app))
-        (watcher (make-thread (lambda () (popup-edit-sys--watch-clipboard 2000)))))
-    (popup-edit--copy-text app)
-    (let* ((change-count (thread-join watcher))
-           (file (make-temp-file "popup-edit." nil ".md")))
-      (message "popup-edit-start %s" file)
-      (with-temp-file file
-        (clipboard-yank))
-      ;; XXX
-      (setq popup-edit--file file)
-      (make-thread
-       (lambda ()
-         (message "Calling emacsclient on %s" popup-edit--file)
-         (let ((e (shell-command (format "emacsclient -a '' %s" popup-edit--file))))
-           (message "----")
-           (print e)
-           (when (zerop e)
-             (shell-command (format "pbcopy < %s" popup-edit--file))
-             (popup-edit--paste-text app))))))))
+(defun popup-edit-cancel ()
+  (interactive)
+  (unless (buffer-live-p popup-edit--buffer)
+    (error "No popup-edit session"))
+  (with-current-buffer popup-edit--buffer
+    (unwind-protect
+        (popup-edit--activate-app popup-edit--app)
+      (kill-buffer)
+      (setq popup-edit--buffer nil))))
 
 (provide 'popup-edit)

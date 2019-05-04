@@ -27,7 +27,6 @@ fn _watch_clipboard(env: &Env, timeout: i64) -> Result<Option<i64>> {
     let start = Instant::now();
     let timeout = Duration::from_millis(timeout as u64);
     loop {
-        sleep(env, 0.02)?;
         let new_count = unsafe { pb.changeCount() };
         if new_count != count {
             return Ok(Some(new_count));
@@ -35,6 +34,7 @@ fn _watch_clipboard(env: &Env, timeout: i64) -> Result<Option<i64>> {
         if start.elapsed() > timeout {
             return Ok(None);
         }
+        sleep(env, 0.02)?;
     }
 }
 
