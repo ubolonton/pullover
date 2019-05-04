@@ -16,6 +16,12 @@ fn sleep(env: &Env, seconds: f64) -> Result<()> {
     Ok(())
 }
 
+/// Return the current "changeCount" of the clipboard.
+#[defun]
+fn _change_count() -> Result<i64> {
+    Ok(unsafe { NSPasteboard::generalPasteboard(nil).changeCount() })
+}
+
 /// Repeatedly poll the clipboard for new items, returning the "changeCount" of the clipboard. If no
 /// item is copied to the clipboard after the given number of milliseconds, return nil.
 ///
