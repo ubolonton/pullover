@@ -12,7 +12,8 @@ text into the clipboard.")
 (defcustom popup-edit-clear-clipboard-when-done nil
   "")
 
-;; (defcustom popup-edit-major-mode 'gfm-mode)
+(defcustom popup-edit-major-mode 'text-mode
+  "Major mode to use for popup-edit sessions.")
 
 (defun popup-edit--get-current-app ()
   (do-applescript "
@@ -85,6 +86,9 @@ value for TIMEOUT."
         (setq popup-edit--buffer (generate-new-buffer app))
         (popup-edit--activate-emacs)
         (switch-to-buffer popup-edit--buffer)
+        ;; XXX: Hmm
+        (when (fboundp popup-edit-major-mode)
+          (funcall popup-edit-major-mode))
         (setq popup-edit--app app)
         (popup-edit-mode +1)
         (when change-count              ; External app didn't copy, or is taking too long.
