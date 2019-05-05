@@ -48,25 +48,45 @@ end tell
 (defun popup-edit--activate-emacs ()
   (popup-edit--activate-app "\"Emacs\""))
 
-;;; TODO: If there's already another on-going, ask user what to do.
+(defmacro popup-edit-with-clipboard-wait (timeout &rest body)
+  "Wait for a new item to appear in the clipboard, while evaluating BODY.
+
+This is typically used to check whether the evaluation of BODY copied a new item
+to the clipboard, directly or asynchronously.
+
+Return (RESULT . CHANGE-COUNT), where CHANGE-COUNT represents the latest state
+of the clipboard.
+
+If there's no new item in the clipboard after TIMEOUT milliseconds,
+return (RESULT . nil). The time taken to evaluate BODY is ignored.
+
+This will block the current thread. Therefore it's recommended to use a small
+value for TIMEOUT."
+  (declare (indent 1))
+  `(let* ((start (popup-edit-sys--change-count))
+          (result (progn ,@body)))
+     (cons result (popup-edit-sys--wait-for-clipboard ,timeout start))))
+
 (defun popup-edit-start ()
   (let ((app (popup-edit--get-current-app)))
     (if (string-match-p (regexp-quote "emacs") (downcase app))
         (progn
           (message "Trying to finish on-going popup-edit session")
           (popup-edit-finish))
-      ;; TODO: For Emacs 25: Add a separate API to get initial change count, then poll from that,
-      ;; since there's no threading support.
-      (let ((watcher (make-thread (lambda () (popup-edit-sys--wait-for-clipboard popup-edit-clipboard-timeout nil)))))
-        (message "copy-text %s" (benchmark-run (popup-edit--copy-text app)))
-        ;; TODO: Find a way not to block the main thread.
-        (let* ((change-count (thread-join watcher)))
-          (setq popup-edit--buffer (generate-new-buffer "popup-edit.md"))
-          (popup-edit--activate-emacs)
-          (switch-to-buffer popup-edit--buffer)
-          (setq popup-edit--app app)
-          ;; TODO: Skip this if the external app didn't paste. Some apps don't if the input is
-          ;; empty.
+      (pcase-let
+          ((`(,_ . ,change-count)
+            ;; TODO: Avoid blocking the main thread like this. One way to do it is making a
+            ;; background thread that signals the main thread upon completion, with `thread-yield'.
+            ;; However, that currently results in Emacs being aborted (gc_in_progress ||
+            ;; waiting_for_input)'.
+            (popup-edit-with-clipboard-wait popup-edit-clipboard-timeout
+              (message "copy-text %s" (benchmark-run (popup-edit--copy-text app))))))
+        ;; TODO: If there's already another on-going, ask user what to do.
+        (setq popup-edit--buffer (generate-new-buffer "popup-edit.md"))
+        (popup-edit--activate-emacs)
+        (switch-to-buffer popup-edit--buffer)
+        (setq popup-edit--app app)
+        (when change-count              ; External app didn't copy, or is taking too long.
           (clipboard-yank))))))
 
 (defun popup-edit-finish ()
