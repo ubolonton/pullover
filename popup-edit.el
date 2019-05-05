@@ -86,6 +86,7 @@ value for TIMEOUT."
         (popup-edit--activate-emacs)
         (switch-to-buffer popup-edit--buffer)
         (setq popup-edit--app app)
+        (popup-edit-mode +1)
         (when change-count              ; External app didn't copy, or is taking too long.
           (clipboard-yank))))))
 
@@ -109,5 +110,20 @@ value for TIMEOUT."
         (popup-edit--activate-app popup-edit--app)
       (kill-buffer)
       (setq popup-edit--buffer nil))))
+
+;;; TODO: I'm not sure these bindings make sense.
+(defvar popup-edit-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap server-edit] 'popup-edit-cancel)
+    (define-key map [remap save-buffer] 'popup-edit-finish)
+    map)
+  "Keymap of `popup-edit-mode'.")
+
+(define-minor-mode popup-edit-mode
+  "Minor mode for editing text grabbed another app, then sending it back to it."
+  :init-value nil
+  :lighter "popup-edit"
+  :keymap popup-edit-mode-map
+  ())
 
 (provide 'popup-edit)
