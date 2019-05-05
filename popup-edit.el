@@ -82,7 +82,7 @@ value for TIMEOUT."
             (popup-edit-with-clipboard-wait popup-edit-clipboard-timeout
               (message "copy-text %s" (benchmark-run (popup-edit--copy-text app))))))
         ;; TODO: If there's already another on-going, ask user what to do.
-        (setq popup-edit--buffer (generate-new-buffer "popup-edit.md"))
+        (setq popup-edit--buffer (generate-new-buffer app))
         (popup-edit--activate-emacs)
         (switch-to-buffer popup-edit--buffer)
         (setq popup-edit--app app)
