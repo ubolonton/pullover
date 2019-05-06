@@ -3,7 +3,18 @@
 (when-let ((module-path (getenv "MODULE_DIR")))
   (add-to-list 'load-path module-path))
 
-(require 'omni-edit-sys)
+(require 'pullover-sys)
 
-(ert-deftest basic ()
-  (message "%s" (omni-edit-sys--wait-for-clipboard 5000 (omni-edit-sys--change-count))))
+;; (ert-deftest basic ()
+;;   (message "%s" (pullover-sys--wait-for-clipboard 5000 (pullover-sys--change-count))))
+
+;; (ert-deftest frontmost ()
+;;   (dotimes (_ 2)
+;;     (message "frontmost -> %s" (pullover-sys--frontmost-bundle-identifier))))
+
+(ert-deftest copy-text ()
+  ;; (message "copied -> %s" (pullover-sys--copy-text "org.mozilla.firefox")))
+  (message "copied -> %s" (pullover-sys--copy-text "com.jetbrains.intellij.ce")))
+
+;; (ert-deftest bridging ()
+;;   (pullover-sys--bridging))

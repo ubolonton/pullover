@@ -1,28 +1,28 @@
-(require 'omni-edit-sys)
+(require 'pullover-sys)
 
-;;; TODO: Consider allowing multiple omni-edit sessions at the same time.
-(defvar omni-edit--buffer nil)
+;;; TODO: Consider allowing multiple pullover sessions at the same time.
+(defvar pullover--buffer nil)
 
-(defvar-local omni-edit--app nil)
+(defvar-local pullover--app nil)
 
-(defcustom omni-edit-clipboard-timeout 100
+(defcustom pullover-clipboard-timeout 100
   "Number of milliseconds to wait for the external app to copy
 text into the clipboard.")
 
-(defcustom omni-edit-clear-clipboard-when-done nil
+(defcustom pullover-clear-clipboard-when-done nil
   "")
 
-(defcustom omni-edit-major-mode 'text-mode
-  "Major mode to use for omni-edit sessions.")
+(defcustom pullover-major-mode 'text-mode
+  "Major mode to use for pullover sessions.")
 
-(defun omni-edit--get-current-app ()
+(defun pullover--get-current-app ()
   (do-applescript "
 tell application \"System Events\"
      name of first application process whose frontmost is true
 end tell
 "))
 
-(defun omni-edit--copy-text (app)
+(defun pullover--copy-text (app)
   (do-applescript (format "
 tell application \"System Events\" to tell process %s
      tell menu 1 of menu bar item \"Edit\" of menu bar 1
@@ -32,7 +32,7 @@ tell application \"System Events\" to tell process %s
 end tell
 " app)))
 
-(defun omni-edit--paste-text (app)
+(defun pullover--paste-text (app)
   (do-applescript (format "
 activate application %s
 tell application \"System Events\" to tell process %s
@@ -43,13 +43,13 @@ tell application \"System Events\" to tell process %s
 end tell
 " app app)))
 
-(defun omni-edit--activate-app (app)
+(defun pullover--activate-app (app)
   (do-applescript (format "activate application %s" app)))
 
-(defun omni-edit--activate-emacs ()
-  (omni-edit--activate-app "\"Emacs\""))
+(defun pullover--activate-emacs ()
+  (pullover--activate-app "\"Emacs\""))
 
-(defmacro omni-edit-with-clipboard-wait (timeout &rest body)
+(defmacro pullover-with-clipboard-wait (timeout &rest body)
   "Wait for a new item to appear in the clipboard, while evaluating BODY.
 
 This is typically used to check whether the evaluation of BODY copied a new item
@@ -64,71 +64,71 @@ return (RESULT . nil). The time taken to evaluate BODY is ignored.
 This will block the current thread. Therefore it's recommended to use a small
 value for TIMEOUT."
   (declare (indent 1))
-  `(let* ((start (omni-edit-sys--change-count))
+  `(let* ((start (pullover-sys--change-count))
           (result (progn ,@body)))
-     (cons result (omni-edit-sys--wait-for-clipboard ,timeout start))))
+     (cons result (pullover-sys--wait-for-clipboard ,timeout start))))
 
-(defun omni-edit-start ()
-  (let ((app (omni-edit--get-current-app)))
+(defun pullover-start ()
+  (let ((app (pullover--get-current-app)))
     (if (string-match-p (regexp-quote "emacs") (downcase app))
         (progn
-          (message "Trying to finish on-going omni-edit session")
-          (omni-edit-finish))
+          (message "Trying to finish on-going pullover session")
+          (pullover-finish))
       (pcase-let
           ((`(,_ . ,change-count)
             ;; TODO: Avoid blocking the main thread like this. One way to do it is making a
             ;; background thread that signals the main thread upon completion, with `thread-yield'.
             ;; However, that currently results in Emacs being aborted (gc_in_progress ||
             ;; waiting_for_input)'.
-            (omni-edit-with-clipboard-wait omni-edit-clipboard-timeout
-              (message "copy-text %s" (benchmark-run (omni-edit--copy-text app))))))
+            (pullover-with-clipboard-wait pullover-clipboard-timeout
+              (message "copy-text %s" (benchmark-run (pullover--copy-text app))))))
         ;; TODO: If there's already another on-going, ask user what to do.
-        (setq omni-edit--buffer (generate-new-buffer app))
-        (omni-edit--activate-emacs)
-        (switch-to-buffer omni-edit--buffer)
+        (setq pullover--buffer (generate-new-buffer app))
+        (pullover--activate-emacs)
+        (switch-to-buffer pullover--buffer)
         ;; XXX: Hmm
-        (when (fboundp omni-edit-major-mode)
-          (funcall omni-edit-major-mode))
-        (setq omni-edit--app app)
-        (omni-edit-mode +1)
+        (when (fboundp pullover-major-mode)
+          (funcall pullover-major-mode))
+        (setq pullover--app app)
+        (pullover-mode +1)
         (when change-count              ; External app didn't copy, or is taking too long.
           (clipboard-yank))))))
 
-(defun omni-edit-finish ()
+(defun pullover-finish ()
   (interactive)
-  (unless (buffer-live-p omni-edit--buffer)
-    (error "No omni-edit session"))
-  (with-current-buffer omni-edit--buffer
+  (unless (buffer-live-p pullover--buffer)
+    (error "No pullover session"))
+  (with-current-buffer pullover--buffer
     (clipboard-kill-ring-save (point-min) (point-max))
     (unwind-protect
-        (omni-edit--paste-text omni-edit--app)
+        (pullover--paste-text pullover--app)
       (kill-buffer)
-      (setq omni-edit--buffer nil))))
+      (setq pullover--buffer nil))))
 
-(defun omni-edit-cancel ()
+(defun pullover-cancel ()
   (interactive)
-  (unless (buffer-live-p omni-edit--buffer)
-    (error "No omni-edit session"))
-  (with-current-buffer omni-edit--buffer
+  (unless (buffer-live-p pullover--buffer)
+    (error "No pullover session"))
+  (with-current-buffer pullover--buffer
     (unwind-protect
-        (omni-edit--activate-app omni-edit--app)
+        (pullover--activate-app pullover--app)
       (kill-buffer)
-      (setq omni-edit--buffer nil))))
+      (setq pullover--buffer nil))))
 
 ;;; TODO: I'm not sure these bindings make sense.
-(defvar omni-edit-mode-map
+(defvar pullover-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [remap server-edit] 'omni-edit-cancel)
-    (define-key map [remap save-buffer] 'omni-edit-finish)
+    (define-key map [remap server-edit] 'pullover-cancel)
+    (define-key map [remap save-buffer] 'pullover-finish)
     map)
-  "Keymap of `omni-edit-mode'.")
+  "Keymap of `pullover-mode'.")
 
-(define-minor-mode omni-edit-mode
+(define-minor-mode pullover-mode
   "Minor mode for editing text grabbed from another app, then sending it back to
 it."
   :init-value nil
-  :lighter "omni-edit"
-  :keymap omni-edit-mode-map
+  :lighter "pullover"
+  :keymap pullover-mode-map
   ())
 
-(provide 'omni-edit)
+(provide 'pullover)
