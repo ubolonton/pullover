@@ -5,8 +5,8 @@ set -euo pipefail
 here=`cd $(dirname $BASH_SOURCE); pwd`
 
 ext=dylib
-MODULE_NAME=popup-edit-sys
-MODULE_ORIGINAL=libpopup_edit_sys.$ext
+MODULE_NAME=omni-edit-sys
+MODULE_ORIGINAL=libomni_edit_sys.$ext
 
 PROJECT_ROOT=`cd $here/..; pwd`
 MODULE_RENAMED=${MODULE_NAME}.so
