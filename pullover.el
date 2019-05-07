@@ -4,6 +4,7 @@
 (defvar pullover--buffer nil)
 
 (defvar-local pullover--app nil)
+(put 'pullover--app 'permanent-local t)
 
 (defcustom pullover-clipboard-timeout 100
   "Number of milliseconds to wait for the external app to copy
