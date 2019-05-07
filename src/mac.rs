@@ -70,12 +70,9 @@ unsafe fn get_process(pred: id) -> id {
 }
 
 unsafe fn name_is(name: &str) -> id {
-    let key = nsstring("NAME");
-    let value = nsstring(name);
-    let vars: id = NSDictionary::dictionaryWithObject_forKey_(nil, value, key);
-    let fmt: id = nsstring("name = $NAME");
-    let pred: id = msg_send![class!(NSPredicate), predicateWithFormat: fmt];
-    msg_send![pred, predicateWithSubstitutionVariables: vars]
+    let fmt: id = nsstring("name = %@");
+    let args = NSArray::arrayWithObject(nil, nsstring(name));
+    msg_send![class!(NSPredicate), predicateWithFormat:fmt argumentArray:args]
 }
 
 unsafe fn bundle_id_is(b_id: &str) -> id {
