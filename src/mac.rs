@@ -84,8 +84,8 @@ unsafe fn bundle_id_is(b_id: &str) -> id {
     msg_send![class!(NSPredicate), predicateWithFormat:fmt argumentArray:args]
 }
 
-unsafe fn click(process: id, item: id) -> id {
-    msg_send![process, click:item at:0]
+unsafe fn click(parent: id, item: id) -> id {
+    msg_send![parent, click:item at:0]
 }
 
 macro_rules! f {
@@ -120,8 +120,8 @@ fn _copy_text(bundle_id: String) -> Result<()> {
         let menu: id = f![edit, menus];
         let select_all: id = f![menu, menuItems, name = "Select All"];
         let copy: id = f![menu, menuItems, name = "Copy"];
-        click(process, select_all);
-        click(process, copy);
+        click(menu, select_all);
+        click(menu, copy);
     });
     Ok(())
 }
@@ -137,8 +137,8 @@ fn _paste_text(bundle_id: String) -> Result<()> {
         let menu: id = f![edit, menus];
         let select_all: id = f![menu, menuItems, name = "Select All"];
         let paste: id = f![menu, menuItems, name = "Paste"];
-        click(process, select_all);
-        click(process, paste);
+        click(menu, select_all);
+        click(menu, paste);
     });
     Ok(())
 }
