@@ -60,7 +60,7 @@ unsafe fn filter(list: id, pred: id) -> id {
 }
 
 unsafe fn first(list: id) -> id {
-    msg_send![list, firstObject]
+    msg_send![list, objectAtIndex:0]
 }
 
 unsafe fn get(list: id, pred: id) -> id {
