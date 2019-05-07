@@ -95,7 +95,7 @@ macro_rules! f {
     }};
     ($obj:expr, $list_name:ident, name = $name:expr) => {{
         let list: id = msg_send![$obj, $list_name];
-        first(filter(list, name_is($name)))
+        msg_send![list, objectWithName:nsstring($name)]
     }};
 }
 
