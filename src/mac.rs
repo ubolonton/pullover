@@ -9,7 +9,7 @@ use objc::{
     rc::autoreleasepool,
 };
 use cocoa::appkit::NSPasteboard;
-use cocoa::base::{nil, id};
+use cocoa::base::{nil, id, YES};
 use cocoa::foundation::{NSString, NSArray, NSDictionary};
 
 #[link(name = "ScriptingBridge", kind = "framework")]
@@ -157,6 +157,23 @@ fn _copy_text(bundle_id: String) -> Result<()> {
         let copy: id = f![menu, menuItems, name = "Copy"];
         click(process, select_all);
         click(process, copy);
+    });
+    Ok(())
+}
+
+#[defun]
+fn _paste_text(bundle_id: String) -> Result<()> {
+    autoreleasepool(|| unsafe {
+        let pred = bundle_id_is(&bundle_id);
+        let process = get_process(pred);
+        msg_send![process, setFrontmost: YES];
+        let menu_bar: id = f![process, menuBars];
+        let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
+        let menu: id = f![edit, menus];
+        let select_all: id = f![menu, menuItems, name = "Select All"];
+        let paste: id = f![menu, menuItems, name = "Paste"];
+        click(process, select_all);
+        click(process, paste);
     });
     Ok(())
 }
