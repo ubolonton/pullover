@@ -178,6 +178,17 @@ fn _paste_text(bundle_id: String) -> Result<()> {
     Ok(())
 }
 
+#[defun]
+fn _activate(bundle_id: String) -> Result<()> {
+    autoreleasepool(|| unsafe {
+        let pred = bundle_id_is(&bundle_id);
+        // TODO: Get the app instead of getting its process through SystemEvents.
+        let process = get_process(pred);
+        msg_send![process, setFrontmost: YES];
+    });
+    Ok(())
+}
+
 /// Return the current "changeCount" of the clipboard.
 #[defun]
 fn _change_count() -> Result<i64> {
