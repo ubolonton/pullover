@@ -17,38 +17,19 @@ text into the clipboard.")
   "Major mode to use for pullover sessions.")
 
 (defun pullover--get-current-app ()
-  (do-applescript "
-tell application \"System Events\"
-     name of first application process whose frontmost is true
-end tell
-"))
+  (pullover-sys--frontmost-bundle-id))
 
 (defun pullover--copy-text (app)
-  (do-applescript (format "
-tell application \"System Events\" to tell process %s
-     tell menu 1 of menu bar item \"Edit\" of menu bar 1
-          click menu item \"Select All\"
-          click menu item \"Copy\"
-     end tell
-end tell
-" app)))
+  (pullover-sys--copy-text app))
 
 (defun pullover--paste-text (app)
-  (do-applescript (format "
-activate application %s
-tell application \"System Events\" to tell process %s
-     tell menu 1 of menu bar item \"Edit\" of menu bar 1
-          click menu item \"Select All\"
-          click menu item \"Paste\"
-     end tell
-end tell
-" app app)))
+  (pullover-sys--paste-text app))
 
 (defun pullover--activate-app (app)
-  (do-applescript (format "activate application %s" app)))
+  (pullover-sys--activate app))
 
 (defun pullover--activate-emacs ()
-  (pullover--activate-app "\"Emacs\""))
+  (pullover--activate-app "org.gnu.Emacs"))
 
 (defmacro pullover-with-clipboard-wait (timeout &rest body)
   "Wait for a new item to appear in the clipboard, while evaluating BODY.
