@@ -8,7 +8,6 @@ mod mac;
 emacs::plugin_is_GPL_compatible!();
 
 #[emacs::module(mod_in_name = false)]
-fn init(env: &Env) -> Result<()> {
-    mac::init(env)?;
+fn init(_: &Env) -> Result<()> {
     Ok(())
 }

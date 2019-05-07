@@ -15,47 +15,6 @@ use cocoa::foundation::{NSString, NSArray, NSDictionary};
 #[link(name = "ScriptingBridge", kind = "framework")]
 extern "C" {}
 
-/// Hacky wrapper type that allows constructing objects with lazy_static. The safety contract is
-/// that the inner value must be used in an immutable manner.
-struct Immutable {
-    id: id,
-}
-
-unsafe impl Sync for Immutable {}
-
-impl Immutable {
-    unsafe fn new(id: id) -> Self {
-        Self { id }
-    }
-}
-
-lazy_static::lazy_static! {
-    static ref NAME_IS: Immutable = unsafe {
-        let fmt: id = nsstring("name = $NAME");
-        let pred: id = msg_send![class!(NSPredicate), predicateWithFormat:fmt];
-        Immutable::new(pred)
-    };
-    static ref IS_FRONTMOST: Immutable = unsafe {
-        let fmt: id = nsstring("frontmost = YES");
-        let pred: id = msg_send![class!(NSPredicate), predicateWithFormat:fmt];
-        Immutable::new(pred)
-    };
-    static ref SYSTEM_EVENTS: Immutable = unsafe {
-        let s = nsstring("com.apple.systemevents");
-        Immutable::new(msg_send![class!(SBApplication), applicationWithBundleIdentifier:s])
-    };
-}
-
-// TODO: Extract this pattern into a macro.
-pub fn init(_: &Env) -> Result<()> {
-    // We need to initialize early, not on first access, since an autorelease pool may be active
-    // at that point.
-    lazy_static::initialize(&NAME_IS);
-    lazy_static::initialize(&IS_FRONTMOST);
-    lazy_static::initialize(&SYSTEM_EVENTS);
-    Ok(())
-}
-
 fn nsstring(s: &str) -> id {
     unsafe { NSString::alloc(nil).init_str(s) }
 }
@@ -89,7 +48,9 @@ fn sleep(env: &Env, seconds: f64) -> Result<()> {
 }
 
 unsafe fn list_processes() -> id {
-    msg_send![SYSTEM_EVENTS.id, processes]
+    let s = nsstring("com.apple.systemevents");
+    let system_events: id = msg_send![class!(SBApplication), applicationWithBundleIdentifier: s];
+    msg_send![system_events, processes]
 }
 
 unsafe fn filter(list: id, pred: id) -> id {
@@ -112,7 +73,9 @@ unsafe fn name_is(name: &str) -> id {
     let key = nsstring("NAME");
     let value = nsstring(name);
     let vars: id = NSDictionary::dictionaryWithObject_forKey_(nil, value, key);
-    msg_send![NAME_IS.id, predicateWithSubstitutionVariables: vars]
+    let fmt: id = nsstring("name = $NAME");
+    let pred: id = msg_send![class!(NSPredicate), predicateWithFormat: fmt];
+    msg_send![pred, predicateWithSubstitutionVariables: vars]
 }
 
 unsafe fn bundle_id_is(b_id: &str) -> id {
@@ -139,7 +102,9 @@ macro_rules! f {
 #[defun]
 fn _frontmost_bundle_id() -> Result<String> {
     autoreleasepool(|| unsafe {
-        let frontmost = get_process(IS_FRONTMOST.id);
+        let fmt: id = nsstring("frontmost = YES");
+        let pred: id = msg_send![class!(NSPredicate), predicateWithFormat: fmt];
+        let frontmost = get_process(pred);
         let bundle: id = msg_send![frontmost, bundleIdentifier];
         Ok(to_str(bundle).expect("No frontmost application process was found").to_owned())
     })
