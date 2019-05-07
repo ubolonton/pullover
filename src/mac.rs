@@ -1,4 +1,3 @@
-use std::thread;
 use std::slice;
 use std::str;
 use std::time::{Duration, Instant};
@@ -6,12 +5,12 @@ use std::time::{Duration, Instant};
 use emacs::{defun, Result, Env, IntoLisp};
 
 use objc::{
-    runtime::{Class, Object, YES},
+    runtime::Object,
     rc::autoreleasepool,
 };
 use cocoa::appkit::NSPasteboard;
 use cocoa::base::{nil, id};
-use cocoa::foundation::{NSString, NSArray, NSUInteger};
+use cocoa::foundation::{NSString, NSArray, NSDictionary};
 
 #[link(name = "ScriptingBridge", kind = "framework")]
 extern "C" {}
@@ -30,12 +29,13 @@ impl Immutable {
     }
 }
 
-fn nsstring(s: &str) -> id {
-    unsafe { NSString::alloc(nil).init_str(s) }
-}
-
 lazy_static::lazy_static! {
-    static ref FRONTMOST: Immutable = unsafe {
+    static ref NAME_IS: Immutable = unsafe {
+        let fmt: id = nsstring("name = $NAME");
+        let pred: id = msg_send![class!(NSPredicate), predicateWithFormat:fmt];
+        Immutable::new(pred)
+    };
+    static ref IS_FRONTMOST: Immutable = unsafe {
         let fmt: id = nsstring("frontmost = YES");
         let pred: id = msg_send![class!(NSPredicate), predicateWithFormat:fmt];
         Immutable::new(pred)
@@ -50,11 +50,15 @@ lazy_static::lazy_static! {
 pub fn init(_: &Env) -> Result<()> {
     // We need to initialize early, not on first access, since an autorelease pool may be active
     // at that point.
-    lazy_static::initialize(&FRONTMOST);
+    lazy_static::initialize(&NAME_IS);
+    lazy_static::initialize(&IS_FRONTMOST);
     lazy_static::initialize(&SYSTEM_EVENTS);
     Ok(())
 }
 
+fn nsstring(s: &str) -> id {
+    unsafe { NSString::alloc(nil).init_str(s) }
+}
 
 /// Get and print an objects description.
 pub unsafe fn describe(obj: id) {
@@ -84,52 +88,75 @@ fn sleep(env: &Env, seconds: f64) -> Result<()> {
     Ok(())
 }
 
-macro_rules! first {
-    ($obj:expr, $name:ident) => {
-        {
-            let list: id = msg_send![$obj, $name];
-            msg_send![list, firstObject]
-        }
-    };
+unsafe fn list_processes() -> id {
+    msg_send![SYSTEM_EVENTS.id, processes]
 }
 
-unsafe fn list_processes() -> id {
-    msg_send![SYSTEM_EVENTS.id, applicationProcesses]
+unsafe fn filter(list: id, pred: id) -> id {
+    msg_send![list, filteredArrayUsingPredicate: pred]
+}
+
+unsafe fn first(list: id) -> id {
+    msg_send![list, firstObject]
 }
 
 unsafe fn get(list: id, pred: id) -> id {
-    let filtered: id = msg_send![list, filteredArrayUsingPredicate: pred];
-    msg_send![filtered, firstObject]
+    first(filter(list, pred))
 }
 
 unsafe fn get_process(pred: id) -> id {
     get(list_processes(), pred)
 }
 
+unsafe fn name_is(name: &str) -> id {
+    let key = nsstring("NAME");
+    let value = nsstring(name);
+    let vars: id = NSDictionary::dictionaryWithObject_forKey_(nil, value, key);
+    msg_send![NAME_IS.id, predicateWithSubstitutionVariables: vars]
+}
+
+unsafe fn bundle_id_is(b_id: &str) -> id {
+    let fmt: id = nsstring("bundleIdentifier == %@");
+    let args = NSArray::arrayWithObject(nil, nsstring(b_id));
+    msg_send![class!(NSPredicate), predicateWithFormat:fmt argumentArray:args]
+}
+
+unsafe fn click(process: id, item: id) -> id {
+    msg_send![process, click:item at:0]
+}
+
+macro_rules! f {
+    ($obj:expr, $list_name:ident) => {{
+        let list: id = msg_send![$obj, $list_name];
+        first(list)
+    }};
+    ($obj:expr, $list_name:ident, name = $name:expr) => {{
+        let list: id = msg_send![$obj, $list_name];
+        first(filter(list, name_is($name)))
+    }};
+}
+
 #[defun]
-fn _frontmost_bundle_identifier() -> Result<String> {
+fn _frontmost_bundle_id() -> Result<String> {
     autoreleasepool(|| unsafe {
-        let x = msg_send![class!(NSThread), isMultiThreaded];
-        describe(x);
-        let frontmost = get_process(FRONTMOST.id);
+        let frontmost = get_process(IS_FRONTMOST.id);
         let bundle: id = msg_send![frontmost, bundleIdentifier];
         Ok(to_str(bundle).expect("No frontmost application process was found").to_owned())
     })
 }
 
 #[defun]
-fn _copy_text(bundle_identifier: String) -> Result<()> {
+fn _copy_text(bundle_id: String) -> Result<()> {
     autoreleasepool(|| unsafe {
-        let fmt: id = nsstring("bundleIdentifier == %@");
-        let args = NSArray::arrayWithObject(nil, nsstring(&bundle_identifier));
-        let pred = msg_send![class!(NSPredicate), predicateWithFormat:fmt argumentArray:args];
+        let pred = bundle_id_is(&bundle_id);
         let process = get_process(pred);
-        let menu_bar: id = first![process, menuBars];
-        let menu_bar_item: id = first![menu_bar, menuBarItems];
-        let windows: id = msg_send![process, windows];
-        let x = msg_send![windows, get];
-        describe(menu_bar);
-        describe(x);
+        let menu_bar: id = f![process, menuBars];
+        let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
+        let menu: id = f![edit, menus];
+        let select_all: id = f![menu, menuItems, name = "Select All"];
+        let copy: id = f![menu, menuItems, name = "Copy"];
+        click(process, select_all);
+        click(process, copy);
     });
     Ok(())
 }

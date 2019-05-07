@@ -8,13 +8,9 @@
 ;; (ert-deftest basic ()
 ;;   (message "%s" (pullover-sys--wait-for-clipboard 5000 (pullover-sys--change-count))))
 
-;; (ert-deftest frontmost ()
-;;   (dotimes (_ 2)
-;;     (message "frontmost -> %s" (pullover-sys--frontmost-bundle-identifier))))
+(ert-deftest frontmost ()
+  (dotimes (_ 2)
+    (message "frontmost -> %s" (pullover-sys--frontmost-bundle-id))))
 
 (ert-deftest copy-text ()
-  ;; (message "copied -> %s" (pullover-sys--copy-text "org.mozilla.firefox")))
   (message "copied -> %s" (pullover-sys--copy-text "com.jetbrains.intellij.ce")))
-
-;; (ert-deftest bridging ()
-;;   (pullover-sys--bridging))
