@@ -10,16 +10,18 @@ use objc::{
 };
 use cocoa::appkit::NSPasteboard;
 use cocoa::base::{nil, id, YES};
-use cocoa::foundation::{NSString, NSArray, NSDictionary};
+use cocoa::foundation::{NSString, NSArray};
 
 #[link(name = "ScriptingBridge", kind = "framework")]
 extern "C" {}
 
+#[allow(unused)]
 fn nsstring(s: &str) -> id {
     unsafe { NSString::alloc(nil).init_str(s) }
 }
 
 /// Get and print an objects description.
+#[allow(unused)]
 pub unsafe fn describe(obj: id) {
     let description: *mut Object = msg_send![obj, description];
     if let Some(desc_str) = to_str(description) {
@@ -69,6 +71,7 @@ unsafe fn get_process(pred: id) -> id {
     get(list_processes(), pred)
 }
 
+#[allow(unused)]
 unsafe fn name_is(name: &str) -> id {
     let fmt: id = nsstring("name = %@");
     let args = NSArray::arrayWithObject(nil, nsstring(name));
