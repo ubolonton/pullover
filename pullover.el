@@ -1,6 +1,8 @@
 (require 'pullover-osa)
 (require 'pullover-dyn)
 
+;;; TODO: Clear clipboard when done.
+
 ;;; TODO: Consider allowing multiple pullover sessions at the same time.
 (defvar pullover--buffer nil)
 
@@ -10,9 +12,6 @@
 (defcustom pullover-clipboard-timeout 100
   "Number of milliseconds to wait for the external app to copy
 text into the clipboard.")
-
-(defcustom pullover-clear-clipboard-when-done nil
-  "")
 
 (defcustom pullover-major-mode 'text-mode
   "Major mode to use for pullover sessions.")
