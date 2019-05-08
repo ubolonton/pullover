@@ -1,16 +1,14 @@
-use std::slice;
-use std::str;
-use std::time::{Duration, Instant};
+use emacs::{defun, Result};
 
-use emacs::{defun, Result, Env, IntoLisp};
+use std::{slice, str};
 
-use objc::{
-    runtime::Object,
-    rc::autoreleasepool,
+use objc::rc::autoreleasepool;
+use cocoa::{
+    base::{nil, id, YES},
+    foundation::{NSString, NSArray},
 };
-use cocoa::appkit::NSPasteboard;
-use cocoa::base::{nil, id, YES};
-use cocoa::foundation::{NSString, NSArray};
+
+mod clipboard;
 
 #[link(name = "ScriptingBridge", kind = "framework")]
 extern "C" {}
@@ -23,7 +21,7 @@ fn nsstring(s: &str) -> id {
 /// Get and print an objects description.
 #[allow(unused)]
 pub unsafe fn describe(obj: id) {
-    let description: *mut Object = msg_send![obj, description];
+    let description: id = msg_send![obj, description];
     if let Some(desc_str) = to_str(description) {
         println!("    : {}", desc_str);
     } else {
@@ -39,14 +37,6 @@ fn to_str<'a, T: NSString + Copy>(nsstring_obj: T) -> Option<&'a str> {
         slice::from_raw_parts(utf8_str, length)
     };
     str::from_utf8(bytes).ok()
-}
-
-// TODO: This should be in the `emacs` crate.
-/// This should be used instead of thread::sleep, so that the GIL is released for the duration of
-/// the sleep, enabling other Lisp threads to run.
-fn sleep(env: &Env, seconds: f64) -> Result<()> {
-    env.call("sleep-for", &[seconds.into_lisp(env)?])?;
-    Ok(())
 }
 
 unsafe fn list_processes() -> id {
@@ -95,7 +85,7 @@ macro_rules! f {
     }};
     ($obj:expr, $list_name:ident, name = $name:expr) => {{
         let list: id = msg_send![$obj, $list_name];
-        msg_send![list, objectWithName:nsstring($name)]
+        msg_send![list, objectWithName: nsstring($name)]
     }};
 }
 
@@ -152,32 +142,4 @@ fn _activate(bundle_id: String) -> Result<()> {
         msg_send![process, setFrontmost: YES];
     });
     Ok(())
-}
-
-/// Return the current "changeCount" of the clipboard.
-#[defun]
-fn _change_count() -> Result<i64> {
-    Ok(unsafe { NSPasteboard::generalPasteboard(nil).changeCount() })
-}
-
-/// Repeatedly poll the clipboard for new items, returning the "changeCount" of the clipboard. If no
-/// item is copied to the clipboard after the given number of milliseconds, return nil.
-///
-/// This should be run in a background thread.
-#[defun]
-fn _wait_for_clipboard(env: &Env, timeout: i64, count: Option<i64>) -> Result<Option<i64>> {
-    let pb = unsafe { NSPasteboard::generalPasteboard(nil) };
-    let start = Instant::now();
-    let count = count.unwrap_or_else(|| unsafe { pb.changeCount() });
-    let timeout = Duration::from_millis(timeout as u64);
-    loop {
-        let new_count = unsafe { pb.changeCount() };
-        if new_count != count {
-            return Ok(Some(new_count));
-        }
-        if start.elapsed() > timeout {
-            return Ok(None);
-        }
-        sleep(env, 0.02)?;
-    }
 }
