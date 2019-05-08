@@ -1,5 +1,5 @@
 [package]
-name = "pullover-sys"
+name = "pullover-dyn"
 version = "0.1.0"
 authors = ["Nguyễn Tuấn Anh <ubolonton@gmail.com>"]
 edition = "2018"

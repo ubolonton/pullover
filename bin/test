@@ -5,8 +5,8 @@ set -euo pipefail
 here=`cd $(dirname $BASH_SOURCE); pwd`
 
 ext=dylib
-MODULE_NAME=pullover-sys
-MODULE_ORIGINAL=libpullover_sys.$ext
+MODULE_NAME=pullover-dyn
+MODULE_ORIGINAL=libpullover_dyn.$ext
 
 PROJECT_ROOT=`cd $here/..; pwd`
 MODULE_RENAMED=${MODULE_NAME}.so

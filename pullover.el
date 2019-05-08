@@ -1,5 +1,5 @@
 (require 'pullover-osa)
-(require 'pullover-sys)
+(require 'pullover-dyn)
 
 ;;; TODO: Consider allowing multiple pullover sessions at the same time.
 (defvar pullover--buffer nil)
@@ -17,16 +17,16 @@ text into the clipboard.")
 (defcustom pullover-major-mode 'text-mode
   "Major mode to use for pullover sessions.")
 
-(defcustom pullover-get-current-app-function #'pullover-sys--frontmost-bundle-id
+(defcustom pullover-get-current-app-function #'pullover-dyn--frontmost-bundle-id
   "Function used to get currently active app.")
 
-(defcustom pullover-copy-text-function #'pullover-sys--copy-text
+(defcustom pullover-copy-text-function #'pullover-dyn--copy-text
   "Function used to copy text from the specified app into the clipboard.")
 
-(defcustom pullover-paste-text-function #'pullover-sys--paste-text
+(defcustom pullover-paste-text-function #'pullover-dyn--paste-text
   "Function used to paste text from the clipboard into the specified app.")
 
-(defcustom pullover-activate-app-function #'pullover-sys--activate
+(defcustom pullover-activate-app-function #'pullover-dyn--activate
   "Function used to activate the specified app.")
 
 (defun pullover--get-current-app ()
@@ -59,9 +59,9 @@ return (RESULT . nil). The time taken to evaluate BODY is ignored.
 This will block the current thread. Therefore it's recommended to use a small
 value for TIMEOUT."
   (declare (indent 1))
-  `(let* ((start (pullover-sys--change-count))
+  `(let* ((start (pullover-dyn--change-count))
           (result (progn ,@body)))
-     (cons result (pullover-sys--wait-for-clipboard ,timeout start))))
+     (cons result (pullover-dyn--wait-for-clipboard ,timeout start))))
 
 (defun pullover-start ()
   (let ((app (pullover--get-current-app)))
