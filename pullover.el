@@ -16,17 +16,29 @@ text into the clipboard.")
 (defcustom pullover-major-mode 'text-mode
   "Major mode to use for pullover sessions.")
 
+(defcustom pullover-get-current-app-function #'pullover-sys--frontmost-bundle-id
+  "Function used to get currently active app.")
+
+(defcustom pullover-copy-text-function #'pullover-sys--copy-text
+  "Function used to copy text from the specified app into the clipboard.")
+
+(defcustom pullover-paste-text-function #'pullover-sys--paste-text
+  "Function used to paste text from the clipboard into the specified app.")
+
+(defcustom pullover-activate-app-function #'pullover-sys--activate
+  "Function used to activate the specified app.")
+
 (defun pullover--get-current-app ()
-  (pullover-sys--frontmost-bundle-id))
+  (funcall pullover-get-current-app-function))
 
 (defun pullover--copy-text (app)
-  (pullover-sys--copy-text app))
+  (funcall pullover-copy-text-function app))
 
 (defun pullover--paste-text (app)
-  (pullover-sys--paste-text app))
+  (funcall pullover-paste-text-function app))
 
 (defun pullover--activate-app (app)
-  (pullover-sys--activate app))
+  (funcall pullover-activate-app-function app))
 
 (defun pullover--activate-emacs ()
   (pullover--activate-app "org.gnu.Emacs"))
