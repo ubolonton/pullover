@@ -90,7 +90,7 @@ macro_rules! f {
 }
 
 #[defun]
-fn _frontmost_bundle_id() -> Result<String> {
+fn _get_current_app() -> Result<String> {
     autoreleasepool(|| unsafe {
         let fmt: id = nsstring("frontmost = YES");
         let pred: id = msg_send![class!(NSPredicate), predicateWithFormat: fmt];
@@ -134,7 +134,7 @@ fn _paste_text(bundle_id: String) -> Result<()> {
 }
 
 #[defun]
-fn _activate(bundle_id: String) -> Result<()> {
+fn _activate_app(bundle_id: String) -> Result<()> {
     autoreleasepool(|| unsafe {
         let pred = bundle_id_is(&bundle_id);
         // TODO: Get the app instead of getting its process through SystemEvents.

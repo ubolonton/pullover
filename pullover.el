@@ -17,7 +17,7 @@ text into the clipboard.")
 (defcustom pullover-major-mode 'text-mode
   "Major mode to use for pullover sessions.")
 
-(defcustom pullover-get-current-app-function #'pullover-dyn--frontmost-bundle-id
+(defcustom pullover-get-current-app-function #'pullover-dyn--get-current-app
   "Function used to get currently active app.")
 
 (defcustom pullover-copy-text-function #'pullover-dyn--copy-text
@@ -26,7 +26,7 @@ text into the clipboard.")
 (defcustom pullover-paste-text-function #'pullover-dyn--paste-text
   "Function used to paste text from the clipboard into the specified app.")
 
-(defcustom pullover-activate-app-function #'pullover-dyn--activate
+(defcustom pullover-activate-app-function #'pullover-dyn--activate-app
   "Function used to activate the specified app.")
 
 (defun pullover--get-current-app ()
@@ -98,7 +98,7 @@ value for TIMEOUT."
   (with-current-buffer pullover--buffer
     (clipboard-kill-ring-save (point-min) (point-max))
     (unwind-protect
-        (pullover--paste-text pullover--app)
+        (message "paste-text %s" (benchmark-run (pullover--paste-text pullover--app)))
       (kill-buffer)
       (setq pullover--buffer nil))))
 
