@@ -1,9 +1,13 @@
+(defun pullover-osa--unquote (osa-string)
+  (replace-regexp-in-string (regexp-quote "\"") "" osa-string))
+
 (defun pullover-osa--get-current-app ()
-  (do-applescript "
+  (pullover-osa--unquote
+   (do-applescript "
 tell application \"System Events\"
-     name of first application process whose frontmost is true
+     bundle identifier of first application process whose frontmost is true
 end tell
-"))
+")))
 
 (defun pullover-osa--copy-text (app)
   ;; TODO: Compare PIDs instead of bundle identifiers.
@@ -32,7 +36,7 @@ end tell
 "))))
     (if (equal app "null")
         ;; XXX: Unquote more reliably.
-        nil (replace-regexp-in-string (regexp-quote "\"") "" app))))
+        nil (pullover-osa--unquote app))))
 
 ;;; Can be faster, but less reliable (delay must be big enough).
 (defun pullover-osa--copy-text-using-keys (app)
@@ -53,7 +57,7 @@ tell application \"System Events\" to tell first process whose bundle identifier
           click menu item \"Paste\"
      end tell
 end tell
-" app app)))
+" app)))
 
 (defun pullover-osa--activate-app (app)
   (do-applescript (format "
