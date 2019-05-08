@@ -15,6 +15,16 @@ tell application \"System Events\" to tell first process whose bundle identifier
 end tell
 " app)))
 
+;;; Can be faster, but less reliable (delay must be big enough).
+(defun pullover-osa--copy-text-using-keys (app)
+  (do-applescript (format "
+tell application \"System Events\" to tell first process whose bundle identifier is \"%s\"
+     keystroke \"a\" using command down
+     keystroke \"c\" using command down
+end tell
+delay 0.3
+" app)))
+
 (defun pullover-osa--paste-text (app)
   (do-applescript (format "
 tell application \"System Events\" to tell first process whose bundle identifier is \"%s\"
