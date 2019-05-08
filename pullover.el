@@ -77,6 +77,8 @@ value for TIMEOUT."
             (pullover-with-clipboard-wait pullover-clipboard-timeout
               (message "copy-text %s" (benchmark-run (pullover--copy-text app))))))
         ;; TODO: If there's already another on-going, ask user what to do.
+        (when (buffer-live-p pullover--buffer)
+          (kill-buffer pullover--buffer))
         (setq pullover--buffer (generate-new-buffer app))
         (pullover--activate-emacs)
         (switch-to-buffer pullover--buffer)
