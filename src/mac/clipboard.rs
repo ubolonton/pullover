@@ -2,6 +2,7 @@ use emacs::{defun, Result, Env, IntoLisp};
 
 use std::time::{Duration, Instant};
 
+use objc::rc::autoreleasepool;
 use cocoa::{
     base::nil,
     appkit::NSPasteboard,
@@ -18,7 +19,9 @@ fn sleep(env: &Env, seconds: f64) -> Result<()> {
 /// Return the current "changeCount" of the clipboard.
 #[defun]
 fn _change_count() -> Result<i64> {
-    Ok(unsafe { NSPasteboard::generalPasteboard(nil).changeCount() })
+    autoreleasepool(|| {
+        Ok(unsafe { NSPasteboard::generalPasteboard(nil).changeCount() })
+    })
 }
 
 /// Repeatedly poll the clipboard for new items, returning the "changeCount" of the clipboard. If no
@@ -27,18 +30,20 @@ fn _change_count() -> Result<i64> {
 /// This should be run in a background thread.
 #[defun]
 fn _wait_for_clipboard(env: &Env, timeout: i64, count: Option<i64>) -> Result<Option<i64>> {
-    let pb = unsafe { NSPasteboard::generalPasteboard(nil) };
-    let start = Instant::now();
-    let count = count.unwrap_or_else(|| unsafe { pb.changeCount() });
-    let timeout = Duration::from_millis(timeout as u64);
-    loop {
-        let new_count = unsafe { pb.changeCount() };
-        if new_count != count {
-            return Ok(Some(new_count));
+    autoreleasepool(|| {
+        let pb = unsafe { NSPasteboard::generalPasteboard(nil) };
+        let start = Instant::now();
+        let count = count.unwrap_or_else(|| unsafe { pb.changeCount() });
+        let timeout = Duration::from_millis(timeout as u64);
+        loop {
+            let new_count = unsafe { pb.changeCount() };
+            if new_count != count {
+                return Ok(Some(new_count));
+            }
+            if start.elapsed() > timeout {
+                return Ok(None);
+            }
+            sleep(env, 0.02)?;
         }
-        if start.elapsed() > timeout {
-            return Ok(None);
-        }
-        sleep(env, 0.02)?;
-    }
+    })
 }
