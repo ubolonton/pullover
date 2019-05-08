@@ -1,3 +1,4 @@
+(require 'pullover-osa)
 (require 'pullover-sys)
 
 ;;; TODO: Consider allowing multiple pullover sessions at the same time.
