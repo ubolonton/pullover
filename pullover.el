@@ -6,6 +6,8 @@
 ;;; TODO: Consider allowing multiple pullover sessions at the same time.
 (defvar pullover--buffer nil)
 
+(defvar pullover--debug t)
+
 (defvar-local pullover--app nil)
 (put 'pullover--app 'permanent-local t)
 
@@ -28,11 +30,21 @@ text into the clipboard.")
 (defcustom pullover-activate-app-function #'pullover-dyn--activate-app
   "Function used to activate the specified app.")
 
+(defmacro pullover--bench (text &rest body)
+  (declare (indent 1))
+  (if pullover--debug
+      `(let ((pullover--result))
+         (message "%s %s" ,text
+                  (benchmark-run (setq pullover--result ,@body)))
+         pullover--result)
+    `(progn ,@body)))
+
 (defun pullover--get-current-app ()
   (funcall pullover-get-current-app-function))
 
 (defun pullover--copy-text (app)
-  (funcall pullover-copy-text-function app))
+  (pullover--bench "copy-text "
+    (funcall pullover-copy-text-function app)))
 
 (defun pullover--paste-text (app)
   (funcall pullover-paste-text-function app))
@@ -97,7 +109,8 @@ value for TIMEOUT."
   (with-current-buffer pullover--buffer
     (clipboard-kill-ring-save (point-min) (point-max))
     (unwind-protect
-        (message "paste-text %s" (benchmark-run (pullover--paste-text pullover--app)))
+        (pullover--bench "paste-text"
+          (pullover--paste-text pullover--app))
       (kill-buffer)
       (setq pullover--buffer nil))))
 
