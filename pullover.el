@@ -64,32 +64,32 @@ value for TIMEOUT."
      (cons result (pullover-dyn--wait-for-clipboard ,timeout start))))
 
 (defun pullover-start ()
-  (let ((app (pullover--get-current-app)))
-    (if (string-match-p (regexp-quote "emacs") (downcase app))
+  (pcase-let
+      ((`(,app . ,change-count)
+        ;; TODO: Avoid blocking the main thread like this. One way to do it is making a
+        ;; background thread that signals the main thread upon completion, with `thread-yield'.
+        ;; However, that currently results in Emacs being aborted (gc_in_progress ||
+        ;; waiting_for_input)'.
+        (pullover-with-clipboard-wait pullover-clipboard-timeout
+          ;; TODO: Terminate the clipboard wait if `app' is `nil'.
+          (pullover--copy-text nil))))
+    (if (null app)
         (progn
-          (message "Trying to finish on-going pullover session")
+          (message "Invoked while inside Emacs. Trying to finish a pullover session ...")
           (pullover-finish))
-      (pcase-let
-          ((`(,_ . ,change-count)
-            ;; TODO: Avoid blocking the main thread like this. One way to do it is making a
-            ;; background thread that signals the main thread upon completion, with `thread-yield'.
-            ;; However, that currently results in Emacs being aborted (gc_in_progress ||
-            ;; waiting_for_input)'.
-            (pullover-with-clipboard-wait pullover-clipboard-timeout
-              (message "copy-text %s" (benchmark-run (pullover--copy-text app))))))
-        ;; TODO: If there's already another on-going, ask user what to do.
-        (when (buffer-live-p pullover--buffer)
-          (kill-buffer pullover--buffer))
-        (setq pullover--buffer (generate-new-buffer app))
-        (pullover--activate-emacs)
-        (switch-to-buffer pullover--buffer)
-        ;; XXX: Hmm
-        (when (fboundp pullover-major-mode)
-          (funcall pullover-major-mode))
-        (setq pullover--app app)
-        (pullover-mode +1)
-        (when change-count              ; External app didn't copy, or is taking too long.
-          (clipboard-yank))))))
+      ;; TODO: If there's already another on-going, ask user what to do.
+      (when (buffer-live-p pullover--buffer)
+        (kill-buffer pullover--buffer))
+      (setq pullover--buffer (generate-new-buffer app))
+      (pullover--activate-emacs)
+      (switch-to-buffer pullover--buffer)
+      ;; XXX: Hmm
+      (when (fboundp pullover-major-mode)
+        (funcall pullover-major-mode))
+      (setq pullover--app app)
+      (pullover-mode +1)
+      (when change-count                  ; External app didn't copy, or is taking too long.
+        (clipboard-yank)))))
 
 (defun pullover-finish ()
   (interactive)

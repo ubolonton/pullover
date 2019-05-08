@@ -6,14 +6,33 @@ end tell
 "))
 
 (defun pullover-osa--copy-text (app)
-  (do-applescript (format "
+  ;; TODO: Compare PIDs instead of bundle identifiers.
+  (let ((app (if app
+                 (do-applescript (format "
 tell application \"System Events\" to tell first process whose bundle identifier is \"%s\"
-     tell menu 1 of menu bar item \"Edit\" of menu bar 1
-          click menu item \"Select All\"
-          click menu item \"Copy\"
-     end tell
+    set i to bundle identifier
+    if i is \"org.gnu.Emacs\" then return null
+    tell menu 1 of menu bar item \"Edit\" of menu bar 1
+        click menu item \"Select All\"
+        click menu item \"Copy\"
+    end tell
+    i
 end tell
-" app)))
+" app))
+               (do-applescript "
+tell application \"System Events\" to tell first process whose frontmost is true
+    set i to bundle identifier
+    if i is \"org.gnu.Emacs\" then return null
+    tell menu 1 of menu bar item \"Edit\" of menu bar 1
+        click menu item \"Select All\"
+        click menu item \"Copy\"
+    end tell
+    i
+end tell
+"))))
+    (if (equal app "null")
+        ;; XXX: Unquote more reliably.
+        nil (replace-regexp-in-string (regexp-quote "\"") "" app))))
 
 ;;; Can be faster, but less reliable (delay must be big enough).
 (defun pullover-osa--copy-text-using-keys (app)

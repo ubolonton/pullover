@@ -1,6 +1,6 @@
 use emacs::{defun, Result};
 
-use std::{slice, str};
+use std::{slice, str, process};
 
 use objc::rc::autoreleasepool;
 use cocoa::{
@@ -89,22 +89,38 @@ macro_rules! f {
     }};
 }
 
+unsafe fn frontmost_app() -> id {
+    let fmt: id = nsstring("frontmost = YES");
+    let pred: id = msg_send![class!(NSPredicate), predicateWithFormat: fmt];
+    get_process(pred)
+}
+
 #[defun]
 fn _get_current_app() -> Result<String> {
     autoreleasepool(|| unsafe {
-        let fmt: id = nsstring("frontmost = YES");
-        let pred: id = msg_send![class!(NSPredicate), predicateWithFormat: fmt];
-        let frontmost = get_process(pred);
+        let frontmost = frontmost_app();
         let bundle: id = msg_send![frontmost, bundleIdentifier];
         Ok(to_str(bundle).expect("No frontmost application process was found").to_owned())
     })
 }
 
 #[defun]
-fn _copy_text(bundle_id: String) -> Result<()> {
-    autoreleasepool(|| unsafe {
-        let pred = bundle_id_is(&bundle_id);
-        let process = get_process(pred);
+fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
+    let my_id = process::id();
+    Ok(autoreleasepool(|| unsafe {
+        let process = match bundle_id {
+            Some(bundle_id) => {
+                let pred = bundle_id_is(&bundle_id);
+                get_process(pred)
+            }
+            None => {
+                frontmost_app()
+            }
+        };
+        let process_id: u32 = msg_send![process, unixId];
+        if process_id == my_id {
+            return None;
+        }
         let menu_bar: id = f![process, menuBars];
         let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
         let menu: id = f![edit, menus];
@@ -112,8 +128,9 @@ fn _copy_text(bundle_id: String) -> Result<()> {
         let copy: id = f![menu, menuItems, name = "Copy"];
         click(menu, select_all);
         click(menu, copy);
-    });
-    Ok(())
+        let bundle: id = msg_send![process, bundleIdentifier];
+        Some(to_str(bundle).expect("Process has invalid bundle").to_owned())
+    }))
 }
 
 #[defun]
