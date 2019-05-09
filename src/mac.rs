@@ -9,6 +9,7 @@ use cocoa::{
 };
 
 mod clipboard;
+mod notification;
 
 #[link(name = "ScriptingBridge", kind = "framework")]
 extern "C" {}
@@ -113,14 +114,14 @@ fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
                 let pred = bundle_id_is(&bundle_id);
                 get_process(pred)
             }
-            None => {
-                frontmost_app()
-            }
+            None => frontmost_app(),
         };
         let process_id: u32 = msg_send![process, unixId];
         if process_id == my_id {
             return None;
         }
+        // TODO: Allow the timeout to be customizable.
+        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 1.0);
         let menu_bar: id = f![process, menuBars];
         let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
         let menu: id = f![edit, menus];
@@ -129,6 +130,7 @@ fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
         click(menu, select_all);
         click(menu, copy);
         let bundle: id = msg_send![process, bundleIdentifier];
+        notification::unschedule(center, ntf);
         Some(to_str(bundle).expect("Process has invalid bundle").to_owned())
     }))
 }

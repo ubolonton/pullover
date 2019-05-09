@@ -21,3 +21,6 @@
            (benchmark-run (pullover-dyn--copy-text nil)))
   (message ":activate-app iTerm2 %s"
            (benchmark-run (pullover-dyn--activate-app "com.googlecode.iterm2"))))
+
+(ert-deftest notification ()
+  (pullover-dyn--notify "Hello" "From Emacs"))
