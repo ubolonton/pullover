@@ -21,7 +21,7 @@ text into the clipboard.")
 (defcustom pullover-get-current-app-function #'pullover-dyn--get-current-app
   "Function used to get currently active app.")
 
-(defcustom pullover-copy-text-function #'pullover-dyn--copy-text
+(defcustom pullover-copy-text-function #'pullover-osa--copy-text
   "Function used to copy text from the specified app into the clipboard.")
 
 (defcustom pullover-paste-text-function #'pullover-dyn--paste-text
@@ -94,13 +94,14 @@ value for TIMEOUT."
       (setq pullover--buffer (generate-new-buffer app))
       (pullover--activate-emacs)
       (switch-to-buffer pullover--buffer)
-      ;; XXX: Hmm
+      (setq pullover--app app)
+      ;; Paste only if the item in the clipboard is new (from the other app).
+      (when change-count
+        (clipboard-yank))
+      ;; TODO: Use an app-to-major-mode mapping.
       (when (fboundp pullover-major-mode)
         (funcall pullover-major-mode))
-      (setq pullover--app app)
-      (pullover-mode +1)
-      (when change-count                  ; External app didn't copy, or is taking too long.
-        (clipboard-yank)))))
+      (pullover-mode +1))))
 
 (defun pullover-finish ()
   (interactive)
