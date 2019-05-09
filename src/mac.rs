@@ -96,6 +96,7 @@ unsafe fn frontmost_app() -> id {
     get_process(pred)
 }
 
+/// Return the bundle ID of the current (frontmost) app.
 #[defun]
 fn _get_current_app() -> Result<String> {
     autoreleasepool(|| unsafe {
@@ -105,9 +106,20 @@ fn _get_current_app() -> Result<String> {
     })
 }
 
+/// Copy text from the app identified by BUNDLE-ID.
+///
+/// The copied text is put into the clipboard.
+///
+/// If BUNDLE-ID is nil, copy from the current (frontmost) app instead.
+///
+/// Return the bundle ID of the affected app. If the app is Emacs itself, return nil
+/// without trying to copy.
+///
+/// If the app takes too long to copy the text, show a notification message to make
+/// it feel less unresponsive.
 #[defun]
 fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
-    let my_id = process::id();
+    let my_pid = process::id();
     Ok(autoreleasepool(|| unsafe {
         let process = match bundle_id {
             Some(bundle_id) => {
@@ -116,8 +128,8 @@ fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
             }
             None => frontmost_app(),
         };
-        let process_id: u32 = msg_send![process, unixId];
-        if process_id == my_id {
+        let target_pid: u32 = msg_send![process, unixId];
+        if target_pid == my_pid {
             return None;
         }
         // TODO: Allow the timeout to be customizable.
@@ -135,6 +147,7 @@ fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
     }))
 }
 
+/// Paste text from the clipboard into the app identified by BUNDLE-ID.
 #[defun]
 fn _paste_text(bundle_id: String) -> Result<()> {
     autoreleasepool(|| unsafe {
@@ -152,6 +165,7 @@ fn _paste_text(bundle_id: String) -> Result<()> {
     Ok(())
 }
 
+/// Switch to the app identified by BUNDLE-ID (making it frontmost).
 #[defun]
 fn _activate_app(bundle_id: String) -> Result<()> {
     autoreleasepool(|| unsafe {
