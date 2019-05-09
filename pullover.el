@@ -18,9 +18,6 @@ text into the clipboard.")
 (defcustom pullover-major-mode 'text-mode
   "Major mode to use for pullover sessions.")
 
-(defcustom pullover-get-current-app-function #'pullover-dyn--get-current-app
-  "Function used to get currently active app.")
-
 (defcustom pullover-copy-text-function #'pullover-dyn--copy-text
   "Function used to copy text from the specified app into the clipboard.")
 
@@ -38,9 +35,6 @@ text into the clipboard.")
                   (benchmark-run (setq pullover--result ,@body)))
          pullover--result)
     `(progn ,@body)))
-
-(defun pullover--get-current-app ()
-  (funcall pullover-get-current-app-function))
 
 (defun pullover--copy-text (app)
   (pullover--bench "copy-text "
