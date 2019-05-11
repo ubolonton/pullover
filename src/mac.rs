@@ -75,8 +75,8 @@ unsafe fn bundle_id_is(b_id: &str) -> id {
     msg_send![class!(NSPredicate), predicateWithFormat:fmt argumentArray:args]
 }
 
-unsafe fn click(parent: id, item: id) -> id {
-    msg_send![parent, click:item at:0]
+unsafe fn click(item: id) -> id {
+    msg_send![item, clickAt: nil]
 }
 
 macro_rules! f {
@@ -127,8 +127,8 @@ fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
         let menu: id = f![edit, menus];
         let select_all: id = f![menu, menuItems, name = "Select All"];
         let copy: id = f![menu, menuItems, name = "Copy"];
-        click(menu, select_all);
-        click(menu, copy);
+        click(select_all);
+        click(copy);
         let bundle: id = msg_send![process, bundleIdentifier];
         notification::unschedule(center, ntf);
         Some(to_str(bundle).expect("Process has invalid bundle").to_owned())
@@ -146,8 +146,8 @@ fn _paste_text(bundle_id: String) -> Result<()> {
         let menu: id = f![edit, menus];
         let select_all: id = f![menu, menuItems, name = "Select All"];
         let paste: id = f![menu, menuItems, name = "Paste"];
-        click(menu, select_all);
-        click(menu, paste);
+        click(select_all);
+        click(paste);
     });
     Ok(())
 }
