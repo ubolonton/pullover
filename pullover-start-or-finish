@@ -24,9 +24,8 @@ EMACSCLIENT='/Applications/EmacsMac.app/Contents/MacOS/bin/emacsclient'
 PID=$($EMACSCLIENT -e '(pullover-checkpoint-clipboard)')
 echo "Emacs PID $PID"
 
-# TODO: Use packaged path instead of dev path.
 echo "Copying ..."
-APP_IN=$("$HERE"/target/debug/pullover copy-text "$PID")
+APP_IN=$("$HERE"/pullover copy-text "$PID")
 echo "<- $APP_IN"
 
 echo "Opening Emacs ..."
@@ -35,5 +34,5 @@ echo "-> $APP_OUT"
 
 if [ "$APP_OUT" != "started" ]; then
     echo "Pasting ..."
-    "$HERE"/target/debug/pullover paste-text "$APP_OUT"
+    "$HERE"/pullover paste-text "$APP_OUT"
 fi
