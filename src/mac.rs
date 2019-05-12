@@ -7,6 +7,7 @@ use cocoa::{
     base::{nil, id, YES},
     foundation::{NSString, NSArray},
 };
+use std::time::Instant;
 
 mod clipboard;
 mod notification;
@@ -24,9 +25,9 @@ fn nsstring(s: &str) -> id {
 pub unsafe fn describe(obj: id) {
     let description: id = msg_send![obj, description];
     if let Some(desc_str) = to_str(description) {
-        println!("    : {}", desc_str);
+        eprintln!("    : {}", desc_str);
     } else {
-        println!("    : nil");
+        eprintln!("    : nil");
     }
 }
 
@@ -119,8 +120,13 @@ fn _get_current_app() -> Result<String> {
 /// it feel less unresponsive.
 #[defun]
 fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
-    let my_pid = process::id();
-    Ok(autoreleasepool(|| unsafe {
+    Ok(copy_text(bundle_id, None))
+}
+
+pub fn copy_text(bundle_id: Option<String>, process_id: Option<u32>) -> Option<String> {
+    let process_id = process_id.unwrap_or_else(|| process::id());
+    autoreleasepool(|| unsafe {
+        let t = Instant::now();
         let process = match bundle_id {
             Some(bundle_id) => {
                 let pred = bundle_id_is(&bundle_id);
@@ -128,41 +134,74 @@ fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
             }
             None => frontmost_app(),
         };
+        eprintln!("{:?} process", t.elapsed());
+        let process: id = msg_send![process, get];
+        eprintln!("{:?} process get", t.elapsed());
         let target_pid: u32 = msg_send![process, unixId];
-        if target_pid == my_pid {
+        eprintln!("{:?} PID", t.elapsed());
+        eprintln!("{} - {}", process_id, target_pid);
+        if target_pid == process_id {
             return None;
         }
         // TODO: Allow the timeout to be customizable.
-        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 1.0);
+        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 0.001);
+        eprintln!("{:?} notify", t.elapsed());
         let menu_bar: id = f![process, menuBars];
+        eprintln!("{:?} menu_bar", t.elapsed());
         let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
+        eprintln!("{:?} edit", t.elapsed());
         let menu: id = f![edit, menus];
+        //        let menu: id = msg_send![menu, get];
+        eprintln!("{:?} menu", t.elapsed());
         let select_all: id = f![menu, menuItems, name = "Select All"];
+        eprintln!("{:?} select_all", t.elapsed());
         let copy: id = f![menu, menuItems, name = "Copy"];
+        eprintln!("{:?} copy", t.elapsed());
         click(select_all);
+        eprintln!("{:?} click select_all", t.elapsed());
         click(copy);
+        eprintln!("{:?} click copy", t.elapsed());
         let bundle: id = msg_send![process, bundleIdentifier];
+        eprintln!("{:?} bundle", t.elapsed());
         notification::unschedule(center, ntf);
         Some(to_str(bundle).expect("Process has invalid bundle").to_owned())
-    }))
+    })
 }
 
 /// Paste text from the clipboard into the app identified by BUNDLE-ID.
 #[defun]
 fn _paste_text(bundle_id: String) -> Result<()> {
-    autoreleasepool(|| unsafe {
-        let pred = bundle_id_is(&bundle_id);
-        let process = get_process(pred);
-        msg_send![process, setFrontmost: YES];
-        let menu_bar: id = f![process, menuBars];
-        let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
-        let menu: id = f![edit, menus];
-        let select_all: id = f![menu, menuItems, name = "Select All"];
-        let paste: id = f![menu, menuItems, name = "Paste"];
-        click(select_all);
-        click(paste);
-    });
+    paste_text(&bundle_id);
     Ok(())
+}
+
+pub fn paste_text(bundle_id: &str) {
+    autoreleasepool(|| unsafe {
+        eprintln!("bundle_id {}", bundle_id);
+        let t = Instant::now();
+        let pred = bundle_id_is(bundle_id);
+        let process = get_process(pred);
+        eprintln!("{:?} process", t.elapsed());
+        let process: id = msg_send![process, get];
+        eprintln!("{:?} process get", t.elapsed());
+        describe(process);
+        msg_send![process, setFrontmost: YES];
+        eprintln!("{:?} activated", t.elapsed());
+        let menu_bar: id = f![process, menuBars];
+        eprintln!("{:?} menu_bar", t.elapsed());
+        let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
+        eprintln!("{:?} edit", t.elapsed());
+        let menu: id = f![edit, menus];
+        eprintln!("{:?} menu", t.elapsed());
+        let select_all: id = f![menu, menuItems, name = "Select All"];
+        eprintln!("{:?} select_all", t.elapsed());
+        let paste: id = f![menu, menuItems, name = "Paste"];
+        eprintln!("{:?} paste", t.elapsed());
+        click(select_all);
+        eprintln!("{:?} clicked select_all", t.elapsed());
+        click(paste);
+        eprintln!("{:?} clicked paste", t.elapsed());
+    })
 }
 
 /// Switch to the app identified by BUNDLE-ID (making it frontmost).

@@ -8,6 +8,11 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
+# XXX
+[[bin]]
+path = "src/lib.rs"
+name = "pullover"
+
 [dependencies.emacs]
 version = "0.8.0"
 path = "../emacs-module-rs"
