@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate objc;
 
-use emacs::{defun, Env, Result, Value};
+use emacs::{Env, Result};
 
-mod mac;
+pub mod mac;
 
 emacs::plugin_is_GPL_compatible!();
 

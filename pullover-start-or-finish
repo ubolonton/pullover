@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# This is the wrapper script that should be bound to a global shortcut to start/finish a pullover
+# editing session.
+#
+# We use ScriptingBridge/AppleScript to control other apps (activating them, copying/pasting texts).
+# When Emacs app is the topmost app in the process hierarchy (e.g. `open /Applications/Emacs.app`),
+# the first control attempt (after some idle period) suffers a significant delay (up to 10+ seconds)
+# on a per-app basis. This delay doesn't exist when the topmost app is not Emacs (e.g. running
+# `/Applications/Emacs.app/Contents/MacOS/Emacs` from iTerm). Therefore we use this script to keep
+# these parts under another app (e.g. karabiner_console_user_server, or other shortcut-binding
+# apps).
+#
+# TODO: Figure out why. File an Emacs bug. (Note that this happens even to the EmacsMac fork.)
+
+set -euo pipefail
+
+DIR=$(dirname "$BASH_SOURCE")
+HERE=$(cd "$DIR"; pwd)
+
+# FIXME: Don't hard-code this.
+EMACSCLIENT='/Applications/EmacsMac.app/Contents/MacOS/bin/emacsclient'
+
+PID=$($EMACSCLIENT -e '(pullover-checkpoint-clipboard)')
+echo "Emacs PID $PID"
+
+echo "Copying ..."
+APP_IN=$("$HERE"/pullover-bin copy-text "$PID")
+echo "<- $APP_IN"
+
+echo "Opening Emacs ..."
+APP_OUT=$($EMACSCLIENT -e '(pullover-start-or-finish "'"$APP_IN"'")')
+echo "-> $APP_OUT"
+
+if [ "$APP_OUT" != "started" ]; then
+    echo "Pasting ..."
+    "$HERE"/pullover-bin paste-text "$APP_OUT"
+fi
