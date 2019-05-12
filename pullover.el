@@ -200,6 +200,7 @@ The text being edited is discarded."
 (defvar pullover-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [remap server-edit] 'pullover-cancel)
+    (define-key map [remap kill-buffer] 'pullover-cancel)
     map)
   "Keymap of `pullover-mode'.")
 
