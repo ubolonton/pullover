@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 
 [[bin]]
 path = "src/bin.rs"
-name = "pullover"
+name = "pullover-bin"
 
 [dependencies.emacs]
 version = "0.8.0"
