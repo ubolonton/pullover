@@ -1,16 +1,17 @@
 [package]
-name = "pullover-dyn"
+name = "pullover"
 version = "0.1.0"
 authors = ["Nguyễn Tuấn Anh <ubolonton@gmail.com>"]
 edition = "2018"
 publish = false
 
 [lib]
+path = "src/lib.rs"
+name = "pullover_dyn"
 crate-type = ["cdylib"]
 
-# XXX
 [[bin]]
-path = "src/lib.rs"
+path = "src/bin.rs"
 name = "pullover"
 
 [dependencies.emacs]
