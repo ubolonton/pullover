@@ -5,7 +5,8 @@
 ;; Author: Tuấn-Anh Nguyễn <ubolonton@gmail.com>
 ;; Keywords:
 ;; Homepage: https://github.com/ubolonton/pullover
-;; Package-Requires: ((emacs "25.1") (frame))
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "25.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,19 +28,19 @@
 
 (eval-and-compile
   (unless (equal system-type 'darwin)
-    (error "Package pullover currently only works on macOS"))
-  (unless (member window-system '(mac ns))
-    (error "Package pullover requires a GUI")))
+    (error "Package pullover currently only works on macOS")))
+
+(unless (member window-system '(mac ns))
+  (error "Package pullover requires a GUI"))
 
 (require 'pullover-osa)
 (require 'pullover-dyn)
 
-;;; TODO: Clear clipboard when done.
-
 ;;; TODO: Consider allowing multiple pullover sessions at the same time.
 (defvar pullover--buffer nil)
 
-(defvar pullover--debug t)
+(eval-and-compile
+  (defvar pullover--debug nil))
 
 (defvar pullover--clipboard-state)
 
@@ -47,10 +48,14 @@
 (put 'pullover--app 'permanent-local t)
 
 (defcustom pullover-clipboard-timeout 100
-  "Number of milliseconds to wait for the external app to copy the text.")
+  "Number of milliseconds to wait for the external app to copy the text."
+  :group 'pullover
+  :type 'integer)
 
 (defcustom pullover-major-mode 'text-mode
-  "Major mode to use for pullover sessions.")
+  "Major mode to use for pullover sessions."
+  :group 'pullover
+  :type 'function)
 
 (defvar pullover-copy-text-function #'pullover-dyn--copy-text
   "Function used to copy text from the specified app into the clipboard.
@@ -68,7 +73,9 @@ Possible values are:
 This is ignored if the wrapper script is used, which is the recommended way.")
 
 (defcustom pullover-activate-app-function #'pullover-dyn--activate-app
-  "Function used to activate the specified app.")
+  "Function used to activate the specified app."
+  :group 'pullover
+  :type 'function)
 
 (defmacro pullover--bench (text &rest body)
   "Eval BODY, printing the run time, prefixed with TEXT."
