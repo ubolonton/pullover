@@ -1,0 +1,52 @@
+* Pullover
+
+Texting while driving (other apps) is dangerous. Let's pull over there to edit the text in Emacs instead!
+
+*Note*: This currently only works on macOS.
+
+** Installation
+- Download and extract the tar archive.
+- Add the extracted directory to =load-path=.
+- Load the package and start the Emacs server.
+    #+begin_src emacs-lisp
+(require 'pullover)
+(server-start)
+#+end_src
+*** Global Shortcut Configuration
+- Assign a global shortcut to the wrapper script [[./pullover-start-or-finish][pullover-start-or-finish]], using an app like [[https://github.com/tekezo/Karabiner-Elements][Karabiner Elements]].
+- Add the shortcut-handling app to the list in =System Preferences > Security & Privacy > Privacy > Accessibility=. Usually the macOS will ask for this on first use, but sometimes it won't. It's a good idea to add the app to the list in advance.
+
+**** Karabiner Elements
+My =karabiner.json= config looks similar to this:
+#+begin_src json
+  "profiles": [{
+    "complex_modifications": {
+      "rules": [
+        {
+          "manipulators": [
+            {
+              "type": "basic",
+              "from": {"modifiers": {"mandatory": ["command", "control"]}, "key_code": "e"},
+              "to": [{"shell_command": "~/.emacs.d/lib/pullover/pullover-start-or-finish"}]
+            }
+          ]
+        }
+      ]
+    }
+  }]
+#+end_src
+The app to give Accessibility permissions is =karabiner_console_user_server=, not the main =Karabiner Elements= app itself. It is usually located at =/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_console_user_server=.
+
+** Usage
+- Press the global shortcut while inside another app to pull text from the current editing area over into Emacs.
+- Edit the text as usual.
+- After you are done, press the same shortcut (while inside Emacs) to end the editing session, sending the text back to the original app.
+- To discard the edited text and return to the original app, use the command =pullover-cancel=, which overrides =kill-buffer= in pullover buffers.
+
+** Customization
+You can specify the default major mode to use for editing. For example:
+#+begin_src emacs-lisp
+(use-package pullover
+  :custom (pullover-major-mode 'gfm-mode)
+  :config (server-start))
+#+end_src
