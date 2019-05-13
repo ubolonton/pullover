@@ -52,7 +52,7 @@
 (defcustom pullover-major-mode 'text-mode
   "Major mode to use for pullover sessions.")
 
-(defcustom pullover-copy-text-function #'pullover-dyn--copy-text
+(defvar pullover-copy-text-function #'pullover-dyn--copy-text
   "Function used to copy text from the specified app into the clipboard.
 
 This is ignored if the wrapper script is used, which is the recommended way.
@@ -63,7 +63,7 @@ Possible values are:
 - `pullover-osa--copy-text': May be a little bit faster, but doesn't show any
   notification message.")
 
-(defcustom pullover-paste-text-function #'pullover-dyn--paste-text
+(defvar pullover-paste-text-function #'pullover-dyn--paste-text
   "Function used to paste text from the clipboard into the specified app.
 This is ignored if the wrapper script is used, which is the recommended way.")
 
