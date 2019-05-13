@@ -9,8 +9,8 @@ Texting while driving (other apps) is dangerous. Let's pull over there to edit t
 - Add the extracted directory to =load-path=.
 - Load the package and start the Emacs server.
     #+begin_src emacs-lisp
-(require 'pullover)
-(server-start)
+      (require 'pullover)
+      (server-start)
 #+end_src
 *** Global Shortcut Configuration
 - Assign a global shortcut to the wrapper script [[./pullover-start-or-finish][pullover-start-or-finish]], using an app like [[https://github.com/tekezo/Karabiner-Elements][Karabiner Elements]].
@@ -44,9 +44,22 @@ The app to give Accessibility permissions is =karabiner_console_user_server=, no
 - To discard the edited text and return to the original app, use the command =pullover-cancel=, which overrides =kill-buffer= in pullover buffers.
 
 ** Customization
-You can specify the default major mode to use for editing. For example:
+You can specify the major mode to use for editing.
 #+begin_src emacs-lisp
-(use-package pullover
-  :custom (pullover-major-mode 'gfm-mode)
-  :config (server-start))
+  (use-package pullover
+    :custom (pullover-major-mode 'gfm-mode)
+    :config (server-start))
+#+end_src
+
+If your =Emacs.app= is installed in a non-standard location, you should customize =pullover-emacsclient-command=.
+#+begin_src emacs-lisp
+  (use-package pullover
+    :custom
+    (pullover-emacsclient-command "/Applications/MacPorts/EmacsMac.app/Contents/MacOS/bin/emacsclient"))
+#+end_src
+
+If the original app takes too long to copy text to the clipboard, the pullover buffer may not be populated correctly. You can give the app more time by configuring =pullover-clipboard-timeout=.
+#+begin_src emacs-lisp
+  (use-package pullover
+    :custom (pullover-clipboard-timeout 200))
 #+end_src
