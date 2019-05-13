@@ -102,6 +102,7 @@ value for TIMEOUT."
           (result (progn ,@body)))
      (cons result (pullover-dyn--wait-for-clipboard ,timeout start))))
 
+;;;###autoload
 (defun pullover-checkpoint-clipboard ()
   "Return Emacs's PID after recording current clipboard's state.
 This should only be used by the external-wrapper flow. See
