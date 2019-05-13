@@ -23,7 +23,7 @@ unsafe fn list_processes() -> id {
 }
 
 unsafe fn get_process(pred: id) -> id {
-    get(list_processes(), pred)
+    first_match(list_processes(), pred)
 }
 
 #[allow(unused)]
@@ -52,6 +52,24 @@ macro_rules! f {
         let list: id = msg_send![$obj, $list_name];
         msg_send![list, objectWithName: nsstring($name)]
     }};
+}
+
+macro_rules! long {
+    ($list:expr, $index:expr) => {
+        {
+            let boxed: id = msg_send![$list, objectAtIndex:$index];
+            msg_send![boxed, longValue]
+        }
+    };
+}
+
+macro_rules! get {
+    ($obj:expr, $message:ident) => {
+        {
+            let prop: id = msg_send![$obj, $message];
+            msg_send![prop, get]
+        }
+    }
 }
 
 unsafe fn frontmost_app() -> id {
@@ -83,10 +101,23 @@ fn _get_current_app() -> Result<String> {
 /// it feel less unresponsive.
 #[defun]
 fn _copy_text(bundle_id: Option<String>) -> Result<Option<String>> {
-    Ok(copy_text(bundle_id, None))
+    Ok(copy_text(bundle_id, None).map(|a| a.bundle_id))
 }
 
-pub fn copy_text(bundle_id: Option<String>, process_id: Option<u32>) -> Option<String> {
+#[derive(Debug)]
+pub struct App {
+    pub bundle_id: String,
+    pub window: Window,
+}
+
+#[derive(Debug)]
+pub struct Window {
+    pub size: (i64, i64),
+    pub position: (i64, i64),
+    pub title: String,
+}
+
+pub fn copy_text(bundle_id: Option<String>, process_id: Option<u32>) -> Option<App> {
     let process_id = process_id.unwrap_or_else(|| process::id());
     autoreleasepool(|| unsafe {
         let t = Instant::now();
@@ -107,14 +138,14 @@ pub fn copy_text(bundle_id: Option<String>, process_id: Option<u32>) -> Option<S
             return None;
         }
         // TODO: Allow the timeout to be customizable.
-        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 0.001);
+        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 1.0);
         eprintln!("{:?} notify", t.elapsed());
         let menu_bar: id = f![process, menuBars];
         eprintln!("{:?} menu_bar", t.elapsed());
         let edit: id = f![menu_bar, menuBarItems, name = "Edit"];
         eprintln!("{:?} edit", t.elapsed());
         let menu: id = f![edit, menus];
-        //        let menu: id = msg_send![menu, get];
+//        let menu: id = msg_send![menu, get];
         eprintln!("{:?} menu", t.elapsed());
         let select_all: id = f![menu, menuItems, name = "Select All"];
         eprintln!("{:?} select_all", t.elapsed());
@@ -127,7 +158,18 @@ pub fn copy_text(bundle_id: Option<String>, process_id: Option<u32>) -> Option<S
         let bundle: id = msg_send![process, bundleIdentifier];
         eprintln!("{:?} bundle", t.elapsed());
         notification::unschedule(center, ntf);
-        Some(to_str(bundle).expect("Process has invalid bundle").to_owned())
+        let window: id = f![process, windows];
+        let size: id = get![window, size];
+        let position: id = get![window, position];
+        let title: id = msg_send![window, title];
+        let window = Window {
+            size: (long![size, 0], long![size, 1]),
+            position: (long![position, 0], long![position, 1]),
+            title: to_str(title).unwrap_or("").to_owned(),
+        };
+        let bundle_id = to_str(bundle).expect("Process has invalid bundle").to_owned();
+        eprintln!("{:?} other", t.elapsed());
+        Some(App { bundle_id, window })
     })
 }
 

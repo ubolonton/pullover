@@ -15,7 +15,7 @@ fn main() {
             let process_id = *&args[2].replace("\n", "").parse::<u32>().unwrap();
             let app = mac::control::copy_text(None, Some(process_id));
             let app = match &app {
-                Some(app) => app,
+                Some(app) => &app.bundle_id,
                 None => "",
             };
             print!("{}", app);
