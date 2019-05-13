@@ -46,7 +46,7 @@
 (defvar-local pullover--app nil)
 (put 'pullover--app 'permanent-local t)
 
-(defcustom pullover-clipboard-timeout 50
+(defcustom pullover-clipboard-timeout 100
   "Number of milliseconds to wait for the external app to copy the text.")
 
 (defcustom pullover-major-mode 'text-mode
