@@ -13,7 +13,7 @@ fn main() {
     match cmd.as_ref() {
         "copy-text" => {
             let process_id = *&args[2].replace("\n", "").parse::<u32>().unwrap();
-            let app = mac::copy_text(None, Some(process_id));
+            let app = mac::control::copy_text(None, Some(process_id));
             let app = match &app {
                 Some(app) => app,
                 None => "",
@@ -23,7 +23,7 @@ fn main() {
         "paste-text" => {
             // XXX: We need to nuke shell-added newline, and emacsclient-added double quotes.
             let app = &args[2].replace("\n", "").replace("\"", "");
-            mac::paste_text(app);
+            mac::control::paste_text(app);
         }
         cmd => {
             panic!("Unknown command {}", cmd);
