@@ -107,7 +107,7 @@ pub fn copy_text(bundle_id: Option<String>, process_id: Option<u32>) -> Option<S
             return None;
         }
         // TODO: Allow the timeout to be customizable.
-        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 0.001);
+        let (center, ntf) = notification::schedule("Please wait!", "Copying ...", 1.0);
         eprintln!("{:?} notify", t.elapsed());
         let menu_bar: id = f![process, menuBars];
         eprintln!("{:?} menu_bar", t.elapsed());
