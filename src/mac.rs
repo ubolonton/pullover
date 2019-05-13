@@ -34,3 +34,15 @@ fn to_str<'a, T: NSString + Copy>(nsstring_obj: T) -> Option<&'a str> {
     };
     str::from_utf8(bytes).ok()
 }
+
+pub unsafe fn filter(list: id, pred: id) -> id {
+    msg_send![list, filteredArrayUsingPredicate: pred]
+}
+
+pub unsafe fn first(list: id) -> id {
+    msg_send![list, objectAtIndex:0]
+}
+
+pub unsafe fn get(list: id, pred: id) -> id {
+    first(filter(list, pred))
+}

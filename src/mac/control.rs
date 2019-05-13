@@ -11,10 +11,7 @@ use cocoa::{
     foundation::{NSArray},
 };
 
-use super::{
-    notification,
-    nsstring, describe, to_str,
-};
+use super::*;
 
 #[link(name = "ScriptingBridge", kind = "framework")]
 extern "C" {}
@@ -23,18 +20,6 @@ unsafe fn list_processes() -> id {
     let s = nsstring("com.apple.systemevents");
     let system_events: id = msg_send![class!(SBApplication), applicationWithBundleIdentifier: s];
     msg_send![system_events, applicationProcesses]
-}
-
-unsafe fn filter(list: id, pred: id) -> id {
-    msg_send![list, filteredArrayUsingPredicate: pred]
-}
-
-unsafe fn first(list: id) -> id {
-    msg_send![list, objectAtIndex:0]
-}
-
-unsafe fn get(list: id, pred: id) -> id {
-    first(filter(list, pred))
 }
 
 unsafe fn get_process(pred: id) -> id {
