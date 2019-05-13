@@ -184,8 +184,9 @@ Return the identifier of the original app."
           (unless no-paste
             (pullover--bench "paste-text"
               (funcall pullover-paste-text-function pullover--app)))
-        (kill-buffer)
-        (setq pullover--buffer nil))
+        (funcall pullover-activate-app-function pullover--app)
+        (setq pullover--buffer nil)
+        (kill-buffer))
       app)))
 
 (defun pullover-cancel ()
