@@ -43,6 +43,6 @@ pub unsafe fn first(list: id) -> id {
     msg_send![list, objectAtIndex:0]
 }
 
-pub unsafe fn first_match(list: id, pred: id) -> id {
+pub unsafe fn get(list: id, pred: id) -> id {
     first(filter(list, pred))
 }
