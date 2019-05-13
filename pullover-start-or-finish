@@ -17,9 +17,13 @@ set -euo pipefail
 
 DIR=$(dirname "$BASH_SOURCE")
 HERE=$(cd "$DIR"; pwd)
+PULLOVER_TMP_DIR="$HOME/.emacs.d/.pullover"
 
-# FIXME: Don't hard-code this.
-EMACSCLIENT='/Applications/EmacsMac.app/Contents/MacOS/bin/emacsclient'
+if [ -f "$PULLOVER_TMP_DIR"/emacsclient_cmd ]; then
+    EMACSCLIENT=$(cat "$PULLOVER_TMP_DIR"/emacsclient_cmd)
+else
+    EMACSCLIENT='emacsclient'
+fi
 
 PID=$($EMACSCLIENT -e '(pullover-checkpoint-clipboard)')
 echo "Emacs PID $PID"

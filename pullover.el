@@ -44,8 +44,38 @@
 
 (defvar pullover--clipboard-state)
 
+(defvar pullover--tmp-dir "~/.emacs.d/.pullover")
+
 (defvar-local pullover--app nil)
 (put 'pullover--app 'permanent-local t)
+
+(defun pullover--save-string (new file)
+  "Save NEW string in FILE. Return the old content of the file.
+If they are the same, return the symbol `unchanged'."
+  (let ((old (condition-case _
+                 (with-temp-buffer
+                   (insert-file-contents file)
+                   (buffer-string))
+               (file-missing nil))))
+    (if (equal old new)
+        'unchanged
+      (with-temp-file file
+        (insert new))
+      old)))
+
+(defcustom pullover-emacsclient-command (pcase window-system
+                                          (`mac "/Applications/EmacsMac.app/Contents/MacOS/bin/emacsclient")
+                                          (`ns "/Applications/Emacs.app/Contents/MacOS/bin/emacsclient")
+                                          (_ "emacsclient"))
+  "Command used to invoke emacsclient.
+Set this if your Emacs.app's emacsclient is not on the shell's search path."
+  :group 'pullover
+  :type 'string
+  :set (lambda (symbol value)
+         (mkdir pullover--tmp-dir t)
+         (pullover--save-string value
+                                (concat (file-name-as-directory pullover--tmp-dir) "emacsclient_cmd"))
+         (set-default symbol value)))
 
 (defcustom pullover-clipboard-timeout 100
   "Number of milliseconds to wait for the external app to copy the text."
