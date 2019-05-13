@@ -174,7 +174,10 @@ Return the identifier of the original app."
   (unless (buffer-live-p pullover--buffer)
     (error "No pullover session"))
   (with-current-buffer pullover--buffer
-    (clipboard-kill-ring-save (point-min) (point-max))
+    ;; XXX: This is to work around `copy-region-as-kill' trying to append text if `last-command' is
+    ;; `kill-region'. TODO: Find a more reliable way to put buffer's text into the clipboard.
+    (let ((last-command nil))
+      (clipboard-kill-ring-save (point-min) (point-max)))
     (let ((app pullover--app))
       (unwind-protect
           (unless no-paste
