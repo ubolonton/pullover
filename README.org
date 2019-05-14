@@ -1,9 +1,10 @@
 * Pullover
-
 Texting while driving (other apps) is dangerous. Let's pull over there to edit the text in Emacs instead!
 
-*Note*: This currently only works on macOS.
+#+ATTR_HTML: :style border: 2px solid #ccc;
+[[./pullover.gif]]
 
+*Note*: This currently only works on macOS.
 ** Installation
 - Download and extract the tar archive.
 - Add the extracted directory to =load-path=.
@@ -12,6 +13,7 @@ Texting while driving (other apps) is dangerous. Let's pull over there to edit t
       (require 'pullover)
       (server-start)
 #+end_src
+
 *** Global Shortcut Configuration
 - Assign a global shortcut to the wrapper script [[./pullover-start-or-finish][pullover-start-or-finish]], using an app like [[https://github.com/tekezo/Karabiner-Elements][Karabiner Elements]].
 - Add the shortcut-handling app to the list in =System Preferences > Security & Privacy > Privacy > Accessibility=. Usually the macOS will ask for this on first use, but sometimes it won't. It's a good idea to add the app to the list in advance.
