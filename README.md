@@ -12,11 +12,10 @@ Texting while driving (other apps) is dangerous. Let's pull over there to edit t
     (server-start)
     ```
 
-## Building from Source
-
-```shell
-./bin/package
-```
+If you want to build from source:
+- Install `cargo` and `cask`.
+- Run `./bin/package`.
+- Look for the built package under `dist/`.
 
 ### Global Shortcut Configuration
 - Assign a global shortcut to the wrapper script [pullover-start-or-finish](./pullover-start-or-finish), using an app like [Karabiner Elements](https://github.com/tekezo/Karabiner-Elements).
