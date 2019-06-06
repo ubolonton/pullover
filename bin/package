@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DIR=$(dirname "$BASH_SOURCE")
+HERE=$(cd "$DIR"; pwd)
+PROJECT_ROOT=$(cd "$HERE"/..; pwd)
+
+cd "$PROJECT_ROOT"
+
+cargo build --release
+
+cp target/release/pullover-bin ./
+cp target/release/libpullover_dyn.dylib ./pullover-dyn.so
+
+cask build && cask package

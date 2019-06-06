@@ -12,6 +12,12 @@ Texting while driving (other apps) is dangerous. Let's pull over there to edit t
     (server-start)
     ```
 
+## Building from Source
+
+```shell
+./bin/package
+```
+
 ### Global Shortcut Configuration
 - Assign a global shortcut to the wrapper script [pullover-start-or-finish](./pullover-start-or-finish), using an app like [Karabiner Elements](https://github.com/tekezo/Karabiner-Elements).
 - Add the shortcut-handling app to the list in `System Preferences > Security & Privacy > Privacy > Accessibility`. Usually the macOS will ask for this on first use, but sometimes it won't. It's a good idea to add the app to the list in advance.
