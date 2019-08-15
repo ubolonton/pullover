@@ -238,7 +238,7 @@ The text being edited is discarded."
   "Keymap of `pullover-mode'.")
 
 (define-minor-mode pullover-mode
-  "Minor mode for editing text grabbed from another app, then sending it back ."
+  "Minor mode for editing text grabbed from another app, then sending it back."
   :init-value nil
   :lighter "pullover"
   :keymap pullover-mode-map
