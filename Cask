@@ -6,4 +6,5 @@
        "pullover-bin"
        "pullover-dyn.so"
        "Cargo.toml"
+       "Cargo.lock"
        "src")
