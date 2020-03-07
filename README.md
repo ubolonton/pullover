@@ -3,9 +3,13 @@ Texting while driving (other apps) is dangerous. Let's pull over there to edit t
 
 **Note**: This currently only works on macOS.
 
-## Installation
-- Download and extract the [tar archive](https://github.com/ubolonton/pullover/releases/download/v0.1.0/pullover-0.1.0.tgz).
-- Add the extracted directory to `load-path`.
+## Installation and Setup
+- Check that Emacs was built with module support: `(functionp 'module-load)`.
+- Add pullover ELPA to `package-archives` (remember to run `package-refresh-contents` afterwards):
+    ```emacs-lisp
+    (add-to-list 'package-archives '("ublt" . "https://elpa.ubolonton.org/packages/"))
+    ```
+- Install `pullover`.
 - Load the package and start the Emacs server.
     ```emacs-lisp
     (require 'pullover)
