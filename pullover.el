@@ -5,7 +5,7 @@
 ;; Author: Tuấn-Anh Nguyễn <ubolonton@gmail.com>
 ;; Keywords: convenience, mac
 ;; Homepage: https://github.com/ubolonton/pullover
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; License: MIT
 
